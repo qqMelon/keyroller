@@ -1,0 +1,7 @@
+## Interface: 110005
+## Version: 1.0.0
+## Title: Key Roller
+## Notes: Gestionnaire de clefs mythiques avec système de roll
+## Author: qqMelon
+
+KeyRoller.lua
