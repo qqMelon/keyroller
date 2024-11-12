@@ -26,10 +26,13 @@ local function GetPlayerMythicKey()
                 if itemID == 180653 then -- Keystone ID
                     local itemLink = itemInfo.hyperlink
                     if itemLink then
-                        local keyLevel, dungeonID = C_MythicPlus.GetOwnedKeystoneLevel(), C_MythicPlus.GetOwnedKeystoneChallengeMapID()
+                        local keyLevel = C_MythicPlus.GetOwnedKeystoneLevel()
+                        local dungeonID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
                         if keyLevel and dungeonID then
                             local dungeonName = C_ChallengeMode.GetMapUIInfo(dungeonID)
-                            return dungeonName, keyLevel
+                            if dungeonName and keyLevel > 0 then
+                                return dungeonName, keyLevel
+                            end
                         end
                     end
                 end
