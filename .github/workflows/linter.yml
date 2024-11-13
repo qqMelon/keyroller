@@ -13,10 +13,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Luacheck linter
-        uses: lunarmodules/luacheck@v1
+      - name: Run luacheck
+        uses: BigWigsMods/actions/luacheck@master
         with:
-          args: KeyRoller.lua
-        env:
-          DEFAULT_BRANCH: "trunk"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          args: -q
