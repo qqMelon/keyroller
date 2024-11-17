@@ -1,7 +1,6 @@
 -- KeyRoller.lua
 local addonName, addon = ...
 local frame = CreateFrame("Frame")
-local UIParent = UIParent
 
 local playerKeys = {}
 local isRollInProgress = false
@@ -11,26 +10,30 @@ local minKeyLevel = 0
 local maxKeyLevel = 99
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
-frame:RegisterEvent("CHAT_MSG_SYSTEM")
-frame:RegisterEvent("BAG_UPDATE_DELAYED")
+frame:RegisterEvent("BAG_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+frame:RegisterEvent("CHAT_MSG_SYSTEM")
 
 local ADDON_PREFIX = "KR"
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
 
--- Obtenir la clef mythique du joueur
 local function GetPlayerMythicKey()
-    for bag = 0, NUM_BAG_SLOTS do
+    for bag = 0, 4 do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
             local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
             if itemInfo then
                 local itemID = itemInfo.itemID
                 if itemID == 180653 then -- Keystone ID
-                    local keyLevel = C_MythicPlus.GetOwnedKeystoneLevel()
-                    local dungeonID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
-                    if keyLevel and dungeonID then
-                        local dungeonName = C_ChallengeMode.GetMapUIInfo(dungeonID)
-                        return dungeonName, keyLevel
+                    local itemLink = itemInfo.hyperlink
+                    if itemLink then
+                        local keyLevel = C_MythicPlus.GetOwnedKeystoneLevel()
+                        local dungeonID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
+                        if keyLevel and dungeonID then
+                            local dungeonName = C_ChallengeMode.GetMapUIInfo(dungeonID)
+                            if dungeonName and keyLevel > 0 then
+                                return dungeonName, keyLevel
+                            end
+                        end
                     end
                 end
             end
@@ -39,22 +42,84 @@ local function GetPlayerMythicKey()
     return nil, nil
 end
 
+local function GetGroupType()
+    return IsInRaid() and "RAID" or "PARTY"
+end
+
+local function BroadcastKey()
+    local dungeonName, level = GetPlayerMythicKey()
+    if dungeonName and level then
+        local message = string.format("%s:%d", dungeonName, level)
+        if IsInGroup() then
+            C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
+        end
+    end
+end
+
+local function RequestKeys()
+    if not IsInGroup() then
+        print("Tu dois être dans un groupe pour demander les clefs!")
+        return
+    end
+
+    playerKeys = {} -- Réinitialise la liste des clefs
+    BroadcastKey() -- Envoie votre clef
+    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType()) -- Demande les clefs
+    print("Demande de clefs envoyée au groupe.")
+end
+
 local function ExportKeysToChat()
     if not IsInGroup() then
         print("Tu dois être dans un groupe pour exporter les clefs!")
         return
     end
 
-    SendChatMessage("=== Clefs Mythiques du Groupe ===", "PARTY")
+    SendChatMessage("=== Clefs Mythiques du Groupe ===", GetGroupType())
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
             local message = string.format("%s: %s +%d", player, key.dungeon, key.level)
-            SendChatMessage(message, "PARTY")
+            SendChatMessage(message, GetGroupType())
         end
     end
 end
 
--- Initialisation de l'interface principale
+local function StartRoll()
+    if not IsInGroup() then
+        print("Tu dois être dans un groupe pour lancer un roll!")
+        return
+    end
+
+    isRollInProgress = true
+    rollResults = {}
+    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "ROLL", GetGroupType())
+    local timestamp = date("%H:%M:%S")
+    table.insert(rollHistory, {time = timestamp, results = {}})
+end
+
+local function UpdateKeyList(content)
+    if not content then
+        return
+    end
+
+    for _, child in ipairs({content:GetChildren()}) do
+        child:Hide()
+        child:SetParent(nil)
+    end
+
+    local offset = 0
+    for player, key in pairs(playerKeys) do
+        if key.level >= minKeyLevel and key.level <= maxKeyLevel then
+            local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            text:SetPoint("TOPLEFT", 10, -offset)
+            text:SetText(string.format("%s: %s +%d", player, key.dungeon, key.level))
+            text:Show()
+            offset = offset + 20
+        end
+    end
+
+    content:SetHeight(math.max(20, offset))
+end
+
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "KRFrame", UIParent, "BasicFrameTemplateWithInset")
     f:SetSize(320, 300)
@@ -70,23 +135,38 @@ local function CreateMainFrame()
     f.title:SetPoint("TOP", 0, -5)
     f.title:SetText("Key Roller")
 
-    -- Bouton pour demander les clefs
     f.requestButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
     f.requestButton:SetPoint("TOPLEFT", 10, -40)
     f.requestButton:SetSize(120, 25)
     f.requestButton:SetText("Request Keys")
-    f.requestButton:SetScript("OnClick", function()
-        RequestKeys()
-    end)
+    f.requestButton:SetScript(
+        "OnClick",
+        function()
+            RequestKeys()
+        end
+    )
 
-    -- Bouton pour exporter les clefs
     f.exportButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
     f.exportButton:SetPoint("TOPRIGHT", -10, -40)
     f.exportButton:SetSize(120, 25)
     f.exportButton:SetText("Export Keys")
-    f.exportButton:SetScript("OnClick", function()
-        ExportKeysToChat()
-    end)
+    f.exportButton:SetScript(
+        "OnClick",
+        function()
+            ExportKeysToChat()
+        end
+    )
+
+    f.rollButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
+    f.rollButton:SetPoint("BOTTOM", 10, 10)
+    f.rollButton:SetSize(120, 25)
+    f.rollButton:SetText("Roll the Keys !")
+    f.rollButton:SetScript(
+        "OnClick",
+        function()
+            StartRoll()
+        end
+    )
 
     -- Zone de défilement pour afficher les clefs
     f.keyList = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
@@ -101,73 +181,101 @@ local function CreateMainFrame()
     return f
 end
 
-local KRFrame = CreateMainFrame()
+-- Event manager
+frame:SetScript(
+    "OnEvent",
+    function(self, event, ...)
+        if event == "CHAT_MSG_ADDON" then
+            local prefix, message, channel, sender = ...
+            if prefix == ADDON_PREFIX then
+                if string.find(message, "^KEY:") then
+                    local _, _, dungeonName, level = string.find(message, "KEY:(.+):(%d+)")
+                    if dungeonName and level then
+                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level)}
+                        UpdateKeyList(KRFrame.keyList.content)
+                    end
+                elseif message == "REQUEST_KEY" then
+                    BroadcastKey()
+                elseif message == "ROLL" and sender ~= UnitName("player") then
+                    RandomRoll(1, 100)
+                end
+            end
+        elseif event == "CHAT_MSG_SYSTEM" then
+            local message = ...
+            local player, roll, min, max = string.match(message, "(.+) rolls (%d+) %((%d+)%-(%d+)%)")
+            if player and isRollInProgress then
+                rollResults[player] = tonumber(roll)
 
--- Met à jour la liste des clefs dans l'interface
-local function UpdateKeyList(content)
-    if not content then return end
+                local currentRoll = rollHistory[#rollHistory]
+                if currentRoll then
+                    table.insert(currentRoll.results, {player = player, roll = roll})
+                end
 
-    -- Supprime tous les anciens enfants de `content`
-    for _, child in ipairs({content:GetChildren()}) do
-        child:Hide()
-        child:SetParent(nil)
-    end
+                local allRolled = true
+                for i = 1, GetNumGroupMembers() do
+                    local name = GetRaidRosterInfo(i)
+                    if not rollResults[name] then
+                        allRolled = false
+                        break
+                    end
+                end
 
-    -- Ajoute de nouveaux textes pour chaque clef
-    local offset = 0
-    for player, key in pairs(playerKeys) do
-        if key.level >= minKeyLevel and key.level <= maxKeyLevel then
-            local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            text:SetPoint("TOPLEFT", 10, -offset)
-            text:SetText(string.format("%s: %s +%d", player, key.dungeon, key.level))
-            text:Show()
-            offset = offset + 20
+                if allRolled then
+                    isRollInProgress = false
+                    local highestRoll = 0
+                    local winner = nil
+                    for player, roll in pairs(rollResults) do
+                        if roll > highestRoll then
+                            highestRoll = roll
+                            winner = player
+                        end
+                    end
+
+                    if winner then
+                        SendChatMessage(
+                            string.format("Le gagnant est %s avec un roll de %d!", winner, highestRoll),
+                            GetGroupType()
+                        )
+                    end
+                end
+            end
+        elseif event == "BAG_UPDATE" then
+            BroadcastKey()
+        elseif event == "GROUP_ROSTER_UPDATE" then
+            BroadcastKey()
         end
     end
+)
 
-    -- Ajuste la hauteur du cadre de contenu pour s'adapter
-    content:SetHeight(math.max(20, offset))
-end
-
-
--- Commandes slash pour l'addon
+-- Commandes
 SLASH_KR1 = "/kr"
 SlashCmdList["KR"] = function(msg)
     local command, arg1, arg2 = string.match(msg, "^(%w+)%s*(%w*)%s*(%w*)$")
 
     if command == "show" then
         KRFrame:Show()
-        UpdateKeyList(KRFrame.keyList.content)
     elseif command == "hide" then
         KRFrame:Hide()
     elseif command == "roll" then
         StartRoll()
-    elseif command == "request" then
-        RequestKeys()
+    elseif command == "filter" then
+        minKeyLevel = tonumber(arg1) or 0
+        maxKeyLevel = tonumber(arg2) or 99
+        UpdateKeyList(KRFrame.keyList.content)
     elseif command == "export" then
         ExportKeysToChat()
+    elseif command == "request" then
+        RequestKeys()
     else
         print("Key Roller - Commandes disponibles:")
         print("/kr show - Affiche la fenêtre")
         print("/kr hide - Cache la fenêtre")
         print("/kr roll - Lance un roll")
-        print("/kr request - Demande les clefs au groupe")
+        print("/kr filter min max - Définit les filtres de niveau")
         print("/kr export - Exporte les clefs dans le chat")
+        print("/kr request - Demande les clefs au groupe")
     end
 end
 
--- Fonction pour demander les clefs
-function RequestKeys()
-    if not IsInGroup() then
-        print("Vous devez être dans un groupe pour demander les clefs!")
-        return
-    end
-
-    playerKeys = {}
-    local dungeonName, level = GetPlayerMythicKey()
-    if dungeonName and level then
-        playerKeys[UnitName("player")] = {dungeon = dungeonName, level = level}
-    end
-
-    UpdateKeyList(KRFrame.keyList.content)
-end
+-- Initialisation
+local mainFrame = CreateMainFrame()
