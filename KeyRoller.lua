@@ -8,6 +8,7 @@ local rollResults = {}
 local rollHistory = {}
 local minKeyLevel = 0
 local maxKeyLevel = 99
+local text = nil
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("BAG_UPDATE")
@@ -100,29 +101,31 @@ local function UpdateKeyList(content)
     if not content then
         return
     end
+    
+    if text == nil then
+        text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    end
 
     for _, child in ipairs({content:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
 
-    local offset = 0
+    local formattedDisplay = ""
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
-            local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            text:SetPoint("TOPLEFT", 10, -offset)
-            text:SetText(string.format("%s: %s +%d", player, key.dungeon, key.level))
-            text:Show()
-            offset = offset + 20
+            formattedDisplay = formattedDisplay .. string.format("%s: %s +%d", player, key.dungeon, key.level) .. '\n' .. '\n'
+            
         end
     end
-
-    content:SetHeight(math.max(20, offset))
+    text:SetPoint("TOPLEFT", 0, 0)
+    text:SetText(formattedDisplay)
+    content:SetHeight(math.max(20, 0))
 end
 
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "KRFrame", UIParent, "BasicFrameTemplateWithInset")
-    f:SetSize(320, 300)
+    f:SetSize(360, 300)
     f:SetPoint("CENTER")
     f:SetMovable(true)
     f:EnableMouse(true)
