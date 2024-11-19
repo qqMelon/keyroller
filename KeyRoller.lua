@@ -122,7 +122,7 @@ end
 
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "KRFrame", UIParent, "BasicFrameTemplateWithInset")
-    f:SetSize(320, 300)
+    f:SetSize(450, 350) -- Largeur - Hauteur
     f:SetPoint("CENTER")
     f:SetMovable(true)
     f:EnableMouse(true)
@@ -174,7 +174,7 @@ local function CreateMainFrame()
     f.keyList:SetPoint("BOTTOMRIGHT", -30, 40)
 
     local content = CreateFrame("Frame", nil, f.keyList)
-    content:SetSize(f.keyList:GetWidth(), 200)
+    content:SetSize(f.keyList:GetWidth(), 400)
     f.keyList:SetScrollChild(content)
     f.keyList.content = content
 
