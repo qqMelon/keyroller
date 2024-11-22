@@ -172,9 +172,9 @@ local function CreateMainFrame()
     )
 
     -- Zone de défilement pour afficher les clefs
-    -- f.keyList = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
-    -- f.keyList:SetPoint("TOPLEFT", 10, -80)
-    -- f.keyList:SetPoint("BOTTOMRIGHT", -30, 40)
+    f.keyList = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+    f.keyList:SetPoint("TOPLEFT", 10, -80)
+    f.keyList:SetPoint("BOTTOMRIGHT", -30, 40)
 
     local content = CreateFrame("Frame", nil, f.keyList)
     content:SetSize(f.keyList:GetWidth(), 400)
