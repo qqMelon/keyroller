@@ -4,7 +4,7 @@ unused_args = false
 allow_defined_top = true
 unused = false
 shadowing = false
-max_line_length = 120
+max_line_length = 130
 
 exclude_files = {
 	"KeyRoller/Libs/",

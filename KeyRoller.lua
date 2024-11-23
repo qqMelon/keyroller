@@ -112,12 +112,14 @@ local function UpdateKeyList(content)
     end
 
     local formattedDisplay = ""
+    local returnStr = "\n"
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
             formattedDisplay =
-                formattedDisplay .. string.format("%s: %s +%d", player, key.dungeon, key.level) .. "\n" .. "\n"
+                formattedDisplay .. string.format("%s: %s +%d %s %s", player, key.dungeon, key.level, returnStr, returnStr)
         end
     end
+    text:SetJustifyH("LEFT");
     text:SetPoint("TOPLEFT", 0, 0)
     text:SetText(formattedDisplay)
     content:SetHeight(math.max(20, 0))
