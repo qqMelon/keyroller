@@ -227,10 +227,10 @@ frame:SetScript(
                     isRollInProgress = false
                     local highestRoll = 0
                     local winner = nil
-                    for player, roll in pairs(rollResults) do
-                        if roll > highestRoll then
-                            highestRoll = roll
-                            winner = player
+                    for matchedPlayer, matchedRoll in pairs(rollResults) do
+                        if matchedRoll > highestRoll then
+                            highestRoll = matchedRoll
+                            winner = matchedPlayer
                         end
                     end
 
@@ -251,7 +251,8 @@ frame:SetScript(
 )
 
 -- Commandes
-SLASH_KR1 = "/kr"
+-- luacheck: globals SLASH_KR1
+SLASH_KR1 = "/kr" -- SlashCommand to start
 SlashCmdList["KR"] = function(msg)
     local command, arg1, arg2 = string.match(msg, "^(%w+)%s*(%w*)%s*(%w*)$")
 
