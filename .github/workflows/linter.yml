@@ -14,8 +14,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Lua environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luarocks
+
       - name: Setup Lua environment
-        run: luarocks install luacheck
+        run: sudo luarocks install luacheck
 
       - name: Run luacheck
         run: luacheck . --config .luacheckrc --no-color
