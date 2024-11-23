@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 20
 
       - name: Generate Changelog file
-        run: ./genchangelog.sh
+        run: chmod +x genchangelog.sh && ./genchangelog.sh
 
       - name: Package and release
         uses: BigWigsMods/packager@v2
