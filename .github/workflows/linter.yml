@@ -1,10 +1,11 @@
 name: Lua Linter
 
 on:
-  push:
-    branches: [ "trunk" ]
   pull_request:
     branches: [ "trunk" ]
+  push:
+    paths: [ "./KeyRoller.lua" ]
+    branches: [ "!trunk" ]
 jobs:
   run-lint:
     runs-on: ubuntu-latest
