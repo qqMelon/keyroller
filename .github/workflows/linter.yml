@@ -9,6 +9,7 @@ on:
 jobs:
   run-lint:
     runs-on: ubuntu-latest
+    environment: integration
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
