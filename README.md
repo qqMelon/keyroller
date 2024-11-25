@@ -2,7 +2,7 @@
 
 # KeyRoller
 
-![[Build Status](https://github.com/qqMelon/KeyRoller/workflows/release/badge.svg)](https://github.com/qqMelon/KeyRoller/actions?workflow=release)
+![[Build Status](https://github.com/qqMelon/Keyroller/workflows/release/badge.svg)](https://github.com/qqMelon/Keyroller/actions?workflow=release)
 
 </div>
 
@@ -15,6 +15,5 @@
 * Roll to chose where your party go
 
 ## Start
-
+  
 To start use **KeyRoller** addon, you can run `/kr` into chat to show all available commands
-
