@@ -1,6 +1,6 @@
 <div align="center">
 
-# Keyroller
+# KeyRoller
 
 ![[Build Status](https://github.com/qqMelon/KeyRoller/workflows/release/badge.svg)](https://github.com/qqMelon/KeyRoller/actions?workflow=release)
 
