@@ -8,6 +8,7 @@ local rollResults = {}
 local rollHistory = {}
 local minKeyLevel = 0
 local maxKeyLevel = 99
+local text = nil
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("BAG_UPDATE")
@@ -62,13 +63,10 @@ local function RequestKeys()
         return
     end
 
-    playerKeys = {}
-    UpdateKeyList(KRFrame.keyList.content)
-
-    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType())
+    playerKeys = {} -- Réinitialise la liste des clefs
+    BroadcastKey() -- Envoie votre clef
+    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType()) -- Demande les clefs
     print("Demande de clefs envoyée au groupe.")
-
-    BroadcastKey()
 end
 
 local function ExportKeysToChat()
@@ -104,28 +102,32 @@ local function UpdateKeyList(content)
         return
     end
 
-    local children = {content:GetChildren()}
-    for _, child in ipairs(children) do
+    if text == nil then
+        text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    end
+
+    for _, child in ipairs({content:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
 
-    local offset = 0
+    local formattedDisplay = ""
+    local returnStr = "\n"
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
-            local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            text:SetPoint("TOPLEFT", 0, -offset)
-            text:SetText(string.format("%s: %s +%d", player, key.dungeon, key.level))
-            offset = offset + 20
+            formattedDisplay =
+                formattedDisplay .. string.format("%s: %s +%d %s %s", player, key.dungeon, key.level, returnStr, returnStr)
         end
     end
-
-    content:SetHeight(math.max(offset, 1))
+    text:SetJustifyH("LEFT");
+    text:SetPoint("TOPLEFT", 0, 0)
+    text:SetText(formattedDisplay)
+    content:SetHeight(math.max(20, 0))
 end
 
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "KRFrame", UIParent, "BasicFrameTemplateWithInset")
-    f:SetSize(300, 500)
+    f:SetSize(400, 350) -- Largeur - Hauteur
     f:SetPoint("CENTER")
     f:SetMovable(true)
     f:EnableMouse(true)
@@ -138,66 +140,46 @@ local function CreateMainFrame()
     f.title:SetPoint("TOP", 0, -5)
     f.title:SetText("Key Roller")
 
-    f.minLevel = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
-    f.minLevel:SetSize(40, 20)
-    f.minLevel:SetPoint("TOPLEFT", 60, -30)
-    f.minLevel:SetText(minKeyLevel)
-    f.minLevel:SetAutoFocus(false)
-    f.minLevel:SetScript(
-        "OnEnterPressed",
-        function(self)
-            minKeyLevel = tonumber(self:GetText()) or 0
-            UpdateKeyList(f.keyList.content)
-            self:ClearFocus()
-        end
-    )
-
-    local minLabel = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    minLabel:SetPoint("RIGHT", f.minLevel, "LEFT", -5, 0)
-    minLabel:SetText("Min:")
-
-    f.maxLevel = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
-    f.maxLevel:SetSize(40, 20)
-    f.maxLevel:SetPoint("LEFT", f.minLevel, "RIGHT", 40, 0)
-    f.maxLevel:SetText(maxKeyLevel)
-    f.maxLevel:SetAutoFocus(false)
-    f.maxLevel:SetScript(
-        "OnEnterPressed",
-        function(self)
-            maxKeyLevel = tonumber(self:GetText()) or 99
-            UpdateKeyList(f.keyList.content)
-            self:ClearFocus()
-        end
-    )
-
-    local maxLabel = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    maxLabel:SetPoint("RIGHT", f.maxLevel, "LEFT", -5, 0)
-    maxLabel:SetText("Max:")
-
     f.requestButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
-    f.requestButton:SetPoint("TOPLEFT", 10, -60)
+    f.requestButton:SetPoint("TOPLEFT", 10, -40)
     f.requestButton:SetSize(120, 25)
-    f.requestButton:SetText("Request")
-    f.requestButton:SetScript("OnClick", RequestKeys)
+    f.requestButton:SetText("Request Keys")
+    f.requestButton:SetScript(
+        "OnClick",
+        function()
+            RequestKeys()
+        end
+    )
 
     f.exportButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
-    f.exportButton:SetPoint("TOPRIGHT", -10, -60)
-    f.exportButton:SetSize(80, 25)
-    f.exportButton:SetText("Send")
-    f.exportButton:SetScript("OnClick", ExportKeysToChat)
+    f.exportButton:SetPoint("TOPRIGHT", -10, -40)
+    f.exportButton:SetSize(120, 25)
+    f.exportButton:SetText("Export Keys")
+    f.exportButton:SetScript(
+        "OnClick",
+        function()
+            ExportKeysToChat()
+        end
+    )
 
     f.rollButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
-    f.rollButton:SetPoint("BOTTOM", 0, 10)
-    f.rollButton:SetSize(100, 25)
-    f.rollButton:SetText("Roll!")
-    f.rollButton:SetScript("OnClick", StartRoll)
+    f.rollButton:SetPoint("BOTTOM", 10, 10)
+    f.rollButton:SetSize(120, 25)
+    f.rollButton:SetText("Roll the Keys !")
+    f.rollButton:SetScript(
+        "OnClick",
+        function()
+            StartRoll()
+        end
+    )
 
+    -- Zone de défilement pour afficher les clefs
     f.keyList = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
-    f.keyList:SetPoint("TOPLEFT", 10, -90)
+    f.keyList:SetPoint("TOPLEFT", 10, -80)
     f.keyList:SetPoint("BOTTOMRIGHT", -30, 40)
 
     local content = CreateFrame("Frame", nil, f.keyList)
-    content:SetSize(f.keyList:GetSize())
+    content:SetSize(f.keyList:GetWidth(), 400)
     f.keyList:SetScrollChild(content)
     f.keyList.content = content
 
@@ -218,7 +200,6 @@ frame:SetScript(
                         UpdateKeyList(KRFrame.keyList.content)
                     end
                 elseif message == "REQUEST_KEY" then
-                    -- Return key
                     BroadcastKey()
                 elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
@@ -248,10 +229,10 @@ frame:SetScript(
                     isRollInProgress = false
                     local highestRoll = 0
                     local winner = nil
-                    for player, roll in pairs(rollResults) do
-                        if roll > highestRoll then
-                            highestRoll = roll
-                            winner = player
+                    for matchedPlayer, matchedRoll in pairs(rollResults) do
+                        if matchedRoll > highestRoll then
+                            highestRoll = matchedRoll
+                            winner = matchedPlayer
                         end
                     end
 
@@ -272,7 +253,8 @@ frame:SetScript(
 )
 
 -- Commandes
-SLASH_KR1 = "/kr"
+-- luacheck: globals SLASH_KR1
+SLASH_KR1 = "/kr" -- SlashCommand to start
 SlashCmdList["KR"] = function(msg)
     local command, arg1, arg2 = string.match(msg, "^(%w+)%s*(%w*)%s*(%w*)$")
 

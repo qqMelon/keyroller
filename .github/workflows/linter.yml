@@ -1,19 +1,28 @@
 name: linter
 
 on:
-  push:
-    branches: [ "trunk" ]
   pull_request:
     branches: [ "trunk" ]
+  push:
+    paths: [ "./KeyRoller.lua" ]
+    branches: [ "!trunk" ]
 jobs:
   run-lint:
     runs-on: ubuntu-latest
+    environment: integration
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Install Lua environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luarocks
+
+      - name: Setup Lua environment
+        run: sudo luarocks install luacheck
+
       - name: Run luacheck
-        uses: BigWigsMods/actions/luacheck@master
-        with:
-          args: -q
+        run: luacheck . --config .luacheckrc --no-color
