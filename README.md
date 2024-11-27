@@ -2,7 +2,7 @@
 
 # KeyRoller
 
-![Latest Release Status](https://github.com/qqMelon/Keyroller/actions/workflows/release/badge.svg)
+![Latest Release Status](https://github.com/qqMelon/keyroller/actions/workflows/release.yml/badge.svg)
 
 </div>
 
