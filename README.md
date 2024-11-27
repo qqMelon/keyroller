@@ -17,4 +17,3 @@
 ## Start
 
 To start use **KeyRoller** addon, you can run `/kr` into chat to show all available commands
-
