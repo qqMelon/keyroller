@@ -1,5 +1,5 @@
-## Interface: 110005
-## Version: 0.7.0
+## Interface: 110007
+## Version: 0.7.1
 ## Title: Key Roller
 ## Notes: Gestionnaire de clefs mythiques avec système de roll
 ## Author: qqMelon
