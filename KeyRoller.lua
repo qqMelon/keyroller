@@ -254,32 +254,12 @@ frame:SetScript(
 
 -- Commandes
 -- luacheck: globals SLASH_KR1
-SLASH_KR1 = "/kr" -- SlashCommand to start
-SlashCmdList["KR"] = function(msg)
-    local command, arg1, arg2 = string.match(msg, "^(%w+)%s*(%w*)%s*(%w*)$")
-
-    if command == "show" then
-        KRFrame:Show()
-    elseif command == "hide" then
+SLASH_KR1 = "/kr"
+SlashCmdList["KR"] = function()
+    if KRFrame:IsShown() then
         KRFrame:Hide()
-    elseif command == "roll" then
-        StartRoll()
-    elseif command == "filter" then
-        minKeyLevel = tonumber(arg1) or 0
-        maxKeyLevel = tonumber(arg2) or 99
-        UpdateKeyList(KRFrame.keyList.content)
-    elseif command == "export" then
-        ExportKeysToChat()
-    elseif command == "request" then
-        RequestKeys()
     else
-        print("Key Roller - Commandes disponibles:")
-        print("/kr show - Affiche la fenêtre")
-        print("/kr hide - Cache la fenêtre")
-        print("/kr roll - Lance un roll")
-        print("/kr filter min max - Définit les filtres de niveau")
-        print("/kr export - Exporte les clefs dans le chat")
-        print("/kr request - Demande les clefs au groupe")
+        KRFrame:Show()
     end
 end
 
