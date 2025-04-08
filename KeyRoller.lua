@@ -69,6 +69,18 @@ local function RequestKeys()
     print("Demande de clefs envoyée au groupe.")
 end
 
+local function GetColorForLevel(level)
+    if level >= 16 then
+        return "|cffff8000" -- orange
+    elseif level >= 11 then
+        return "|cffa335ee" -- violet
+    elseif level >= 4 then
+        return "|cff0070dd" -- bleu
+    else
+        return "|cff1eff00" -- vert
+    end
+end
+
 local function ExportKeysToChat()
     if not IsInGroup() then
         print("Tu dois être dans un groupe pour exporter les clefs!")
@@ -98,31 +110,63 @@ local function StartRoll()
 end
 
 local function UpdateKeyList(content)
-    if not content then
-        return
-    end
+    if not content then return end
 
-    if text == nil then
-        text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    end
-
+    -- Clean children
     for _, child in ipairs({content:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
 
-    local formattedDisplay = ""
-    local returnStr = "\n"
+    local rowHeight = 20
+    local yOffset = -5
+    local index = 0
+
+    -- Headers
+    local header = CreateFrame("Frame", nil, content)
+    header:SetSize(content:GetWidth(), rowHeight)
+    header:SetPoint("TOPLEFT", 0, yOffset)
+
+    local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    h1:SetPoint("LEFT", 10, 0)
+    h1:SetText("Nom du joueur")
+
+    local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    h2:SetPoint("CENTER", 0, 0)
+    h2:SetText("Niveau")
+
+    local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    h3:SetPoint("RIGHT", -10, 0)
+    h3:SetText("Donjon")
+
+    yOffset = yOffset - rowHeight
+
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
-            formattedDisplay =
-                formattedDisplay .. string.format("%s: %s +%d %s %s", player, key.dungeon, key.level, returnStr, returnStr)
+            index = index + 1
+            local row = CreateFrame("Frame", nil, content)
+            row:SetSize(content:GetWidth(), rowHeight)
+            row:SetPoint("TOPLEFT", 0, yOffset)
+
+            local nameFont = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            nameFont:SetPoint("LEFT", 10, 0)
+            local nameOnly = string.match(player, "([^%-]+)") or player
+            nameFont:SetText(nameOnly)
+
+            local levelFont = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            levelFont:SetPoint("CENTER", 0, 0)
+            local color = GetColorForLevel(key.level)
+            levelFont:SetText(color .. "+" .. key.level .. "|r")
+
+            local dungeonFont = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            dungeonFont:SetPoint("RIGHT", -10, 0)
+            dungeonFont:SetText(key.dungeon)
+
+            yOffset = yOffset - rowHeight
         end
     end
-    text:SetJustifyH("LEFT");
-    text:SetPoint("TOPLEFT", 0, 0)
-    text:SetText(formattedDisplay)
-    content:SetHeight(math.max(20, 0))
+
+    content:SetHeight(math.abs(yOffset))
 end
 
 local function CreateMainFrame()
@@ -174,7 +218,8 @@ local function CreateMainFrame()
     )
 
     -- Zone de défilement pour afficher les clefs
-    f.keyList = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+    -- f.keyList = CreateFrame("ScrollFrame", nil, f, "ScrollFrameTemplate") -- Retire la scrollbar mais pas le scrolling
+    f.keyList = CreateFrame("ScrollFrame", nil, f)
     f.keyList:SetPoint("TOPLEFT", 10, -80)
     f.keyList:SetPoint("BOTTOMRIGHT", -30, 40)
 
@@ -254,32 +299,12 @@ frame:SetScript(
 
 -- Commandes
 -- luacheck: globals SLASH_KR1
-SLASH_KR1 = "/kr" -- SlashCommand to start
-SlashCmdList["KR"] = function(msg)
-    local command, arg1, arg2 = string.match(msg, "^(%w+)%s*(%w*)%s*(%w*)$")
-
-    if command == "show" then
-        KRFrame:Show()
-    elseif command == "hide" then
+SLASH_KR1 = "/kr"
+SlashCmdList["KR"] = function()
+    if KRFrame:IsShown() then
         KRFrame:Hide()
-    elseif command == "roll" then
-        StartRoll()
-    elseif command == "filter" then
-        minKeyLevel = tonumber(arg1) or 0
-        maxKeyLevel = tonumber(arg2) or 99
-        UpdateKeyList(KRFrame.keyList.content)
-    elseif command == "export" then
-        ExportKeysToChat()
-    elseif command == "request" then
-        RequestKeys()
     else
-        print("Key Roller - Commandes disponibles:")
-        print("/kr show - Affiche la fenêtre")
-        print("/kr hide - Cache la fenêtre")
-        print("/kr roll - Lance un roll")
-        print("/kr filter min max - Définit les filtres de niveau")
-        print("/kr export - Exporte les clefs dans le chat")
-        print("/kr request - Demande les clefs au groupe")
+        KRFrame:Show()
     end
 end
 
