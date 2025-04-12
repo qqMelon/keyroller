@@ -109,6 +109,29 @@ local function StartRoll()
     table.insert(rollHistory, {time = timestamp, results = {}})
 end
 
+local f = CreateFrame("Frame")
+f:RegisterEvent("CHAT_MSG_ADDON")
+f:SetScript("OnShow", function()
+    if IsInGroup() then
+        SendOwnKey()
+    end
+end)
+
+f:RegisterEvent("GROUP_ROSTER_UPDATE")
+f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
+    if event == "CHAT_MSG_ADDON" and prefix == "KR_ADDON" then
+        -- Décode et stocke la clé reçue
+        local name, level, dungeon = strsplit(":", message)
+        name, level, dungeon = name or "?", tonumber(level), dungeon or "?"
+        if name and level and dungeon then
+            keyList[name] = { level = level, dungeon = dungeon }
+            if mainFrame and mainFrame.keyList then
+                UpdateKeyList(mainFrame.keyList.content)
+            end
+        end
+    end
+end)
+
 local function UpdateKeyList(content)
     if not content then return end
 
@@ -118,61 +141,88 @@ local function UpdateKeyList(content)
         child:SetParent(nil)
     end
 
-    local rowHeight = 20
-    local yOffset = -5
-    local index = 0
+    local totalWidth = content:GetWidth()
+    local nameWidth = totalWidth * 0.33
+    local levelWidth = totalWidth * 0.17
+    local dungeonWidth = totalWidth * 0.5
+
+    local rowHeight = 24
+    local spacing = 5
+    local rowIndex = 0
 
     -- Headers
     local header = CreateFrame("Frame", nil, content)
-    header:SetSize(content:GetWidth(), rowHeight)
-    header:SetPoint("TOPLEFT", 0, yOffset)
+--     header:SetSize(content:GetWidth(), rowHeight)
+--     header:SetPoint("TOPLEFT", 0, 0)
+    header:SetPoint("TOPLEFT", 0, 0)
+    header:SetPoint("TOPRIGHT", 0, 0)
+    header:SetHeight(rowHeight)
 
-    local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    h1:SetPoint("LEFT", 10, 0)
+    local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    h1:SetPoint("LEFT", 5, 0)
     h1:SetText("Nom du joueur")
 
-    local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    h2:SetPoint("CENTER", 0, 0)
+    local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    h2:SetPoint("CENTER", header, "CENTER", 0, 0)
     h2:SetText("Niveau")
 
-    local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    h3:SetPoint("RIGHT", -10, 0)
+    local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    h3:SetPoint("RIGHT", -5, 0)
     h3:SetText("Donjon")
-
-    yOffset = yOffset - rowHeight
 
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
-            index = index + 1
+            rowIndex = rowIndex + 1
             local row = CreateFrame("Frame", nil, content)
             row:SetSize(content:GetWidth(), rowHeight)
-            row:SetPoint("TOPLEFT", 0, yOffset)
+            row:SetHeight(rowHeight)
+            row:SetPoint("TOPLEFT", 0, -(rowHeight + spacing) * rowIndex)
 
-            local nameFont = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            nameFont:SetPoint("LEFT", 10, 0)
-            local nameOnly = string.match(player, "([^%-]+)") or player
-            nameFont:SetText(nameOnly)
 
-            local levelFont = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            levelFont:SetPoint("CENTER", 0, 0)
+            row.bg = row:CreateTexture(nil, "BACKGROUND")
+            row.bg:SetAllPoints()
+            row.bg:SetColorTexture(0.1, 0.1, 0.1, 0.6)
+
+            row:SetScript("OnEnter", function()
+                row.bg:SetColorTexture(0.2, 0.2, 0.2, 0.9)
+            end)
+            row:SetScript("OnLeave", function()
+                row.bg:SetColorTexture(0.1, 0.1, 0.1, 0.6)
+            end)
+
+            local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            nameText:SetPoint("LEFT", 5, 0)
+            nameText:SetWidth(nameWidth)
+            nameText:SetJustifyH("LEFT")
+            nameText:SetText(string.gsub(player, "-.*", ""))
+
+            local levelText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             local color = GetColorForLevel(key.level)
-            levelFont:SetText(color .. "+" .. key.level .. "|r")
+            levelText:SetPoint("CENTER", row, "CENTER", 0, 0)
+            levelText:SetText(color .. "+" .. key.level .. "|r")
+            levelText:SetJustifyH("CENTER")
 
-            local dungeonFont = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            dungeonFont:SetPoint("RIGHT", -10, 0)
-            dungeonFont:SetText(key.dungeon)
-
-            yOffset = yOffset - rowHeight
+            local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            dungeonText:SetPoint("RIGHT", -5, 0)
+            dungeonText:SetText(key.dungeon or "?")
+            dungeonText:SetJustifyH("RIGHT")
         end
     end
 
-    content:SetHeight(math.abs(yOffset))
+    content:SetHeight((rowHeight + spacing) * (rowIndex + 2))
 end
 
 local function CreateMainFrame()
-    local f = CreateFrame("Frame", "KRFrame", UIParent, "BasicFrameTemplateWithInset")
-    f:SetSize(400, 350) -- Largeur - Hauteur
+    local f = CreateFrame("Frame", "KRFrame", UIParent, "BackdropTemplate")
+    f:SetSize(490, 350) -- Largeur - Hauteur
     f:SetPoint("CENTER")
+    f:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = { left = 3, right = 1, top = 3, bottom = 3 }
+    })
+    f:SetBackdropColor(0, 0, 0, 0.8)
     f:SetMovable(true)
     f:EnableMouse(true)
     f:RegisterForDrag("LeftButton")
@@ -181,33 +231,13 @@ local function CreateMainFrame()
     f:Hide()
 
     f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    f.title:SetPoint("TOP", 0, -5)
-    f.title:SetText("Key Roller")
+    f.title:SetPoint("TOP", 0, -15)
+    f.title:SetFont("Fonts\\FRIZQT__.TTF", 21, "OUTLINE")
+    f.title:SetTextColor(0.8, 0.8, 1)
+    f.title:SetText("KEY ROLLER")
 
-    f.requestButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
-    f.requestButton:SetPoint("TOPLEFT", 10, -40)
-    f.requestButton:SetSize(120, 25)
-    f.requestButton:SetText("Request Keys")
-    f.requestButton:SetScript(
-        "OnClick",
-        function()
-            RequestKeys()
-        end
-    )
-
-    f.exportButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
-    f.exportButton:SetPoint("TOPRIGHT", -10, -40)
-    f.exportButton:SetSize(120, 25)
-    f.exportButton:SetText("Export Keys")
-    f.exportButton:SetScript(
-        "OnClick",
-        function()
-            ExportKeysToChat()
-        end
-    )
-
-    f.rollButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
-    f.rollButton:SetPoint("BOTTOM", 10, 10)
+    f.rollButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    f.rollButton:SetPoint("BOTTOM", 5, 5)
     f.rollButton:SetSize(120, 25)
     f.rollButton:SetText("Roll the Keys !")
     f.rollButton:SetScript(
@@ -217,16 +247,25 @@ local function CreateMainFrame()
         end
     )
 
-    -- Zone de défilement pour afficher les clefs
-    -- f.keyList = CreateFrame("ScrollFrame", nil, f, "ScrollFrameTemplate") -- Retire la scrollbar mais pas le scrolling
+    f.closeButton = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+    f.closeButton:SetPoint("TOPRIGHT", -5, -5)
+    f.closeButton:SetSize(24, 24)
+
+    table.insert(UISpecialFrames, "KRFrame")
+
+    -- ScrollFrame
     f.keyList = CreateFrame("ScrollFrame", nil, f)
-    f.keyList:SetPoint("TOPLEFT", 10, -80)
-    f.keyList:SetPoint("BOTTOMRIGHT", -30, 40)
+    f.keyList:SetPoint("TOPLEFT", 12, -45)
+    f.keyList:SetPoint("BOTTOMRIGHT", -30, 45)
 
     local content = CreateFrame("Frame", nil, f.keyList)
-    content:SetSize(f.keyList:GetWidth(), 400)
+    content:SetPoint("TOPLEFT")
+    content:SetPoint("TOPRIGHT")
+    content:SetWidth(f.keyList:GetWidth())
+--     content:SetSize(f.keyList:GetWidth(), 450)
     f.keyList:SetScrollChild(content)
     f.keyList.content = content
+
 
     return f
 end
