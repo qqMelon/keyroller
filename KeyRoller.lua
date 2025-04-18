@@ -109,9 +109,8 @@ local function StartRoll()
     table.insert(rollHistory, {time = timestamp, results = {}})
 end
 
+
 local function FirePromotionEvent(winner)
-	--promoting new player to list the group ==> setting key info to bypass SetEntryTitle() protection
-	PromoteToLeader(winner)
 	C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "PROMOTE_LEADER", GetGroupType())
 	SendChatMessage(string.format("=== THE NEW LEADER OF THE GROUP IS %s ===", winner), GetGroupType())
 	return
@@ -125,12 +124,14 @@ local function CreateMythicGroup()
             LFGListCategorySelection_SelectCategory(LFGListFrame.CategorySelection,2,0)
             LFGListCategorySelectionStartGroupButton_OnClick(LFGListFrame.CategorySelection.StartGroupButton)
 			SendChatMessage(string.format("=== THE KEY IS GOING TO BE LISTED ==="),GetGroupType())
+
         end
     end
     return
 end
 
-local function DisplayPopupCreation()
+local function DisplayPopupCreation(winner)
+	
     if GetNumGroupMembers() < 5 then
         if UnitIsGroupLeader(UnitName("player")) then
 			StaticPopupDialogs["CREATION_CONFIRMATION"] = {
@@ -152,6 +153,27 @@ local function DisplayPopupCreation()
     return
 end
 
+local function DisplayPopUpLeadTransfer(winner)
+    if GetNumGroupMembers() < 5 then
+        if UnitIsGroupLeader(UnitName("player")) then
+            StaticPopupDialogs["LEADPROMOTE_TRANSFER"] = {
+            text = "TRANSFERING GROUP LEADERSHIP",
+            OnCancel = function()
+				--PromoteToLeader(winner)
+				FirePromotionEvent(winner)
+            end,
+            timeout = 2,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+            }
+    
+            StaticPopup_Show ("LEADPROMOTE_TRANSFER")
+        end
+    end
+    return
+end
+
 local function DisplayPopUpLeadPromote(winner)
     if GetNumGroupMembers() < 5 then
         if UnitIsGroupLeader(UnitName("player")) then
@@ -160,7 +182,9 @@ local function DisplayPopUpLeadPromote(winner)
             button1 = "Yes",
             button2 = "No",
             OnAccept = function()
-				FirePromotionEvent(winner)   
+				PromoteToLeader(winner)
+				--FirePromotionEvent(winner)
+				DisplayPopUpLeadTransfer(winner)
             end,
             timeout = 0,
             whileDead = true,
@@ -364,7 +388,7 @@ frame:SetScript(
                 elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
                 elseif message == "PROMOTE_LEADER" then
-					DisplayPopupCreation()
+					DisplayPopupCreation(winner)
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
