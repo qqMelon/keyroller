@@ -109,6 +109,93 @@ local function StartRoll()
     table.insert(rollHistory, {time = timestamp, results = {}})
 end
 
+
+local function FirePromotionEvent(winner)
+	C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "PROMOTE_LEADER", GetGroupType())
+	SendChatMessage(string.format("=== THE NEW LEADER OF THE GROUP IS %s ===", winner), GetGroupType())
+	return
+end
+
+local function CreateMythicGroup()
+    if GetNumGroupMembers() < 5 then
+        if UnitIsGroupLeader(UnitName("player")) then
+            PVEFrame_ShowFrame("GroupFinderFrame")
+            GroupFinderFrameGroupButton3:Click()
+            LFGListCategorySelection_SelectCategory(LFGListFrame.CategorySelection,2,0)
+            LFGListCategorySelectionStartGroupButton_OnClick(LFGListFrame.CategorySelection.StartGroupButton)
+			SendChatMessage(string.format("=== THE KEY IS GOING TO BE LISTED ==="),GetGroupType())
+
+        end
+    end
+    return
+end
+
+local function DisplayPopupCreation(winner)
+	
+    if GetNumGroupMembers() < 5 then
+        if UnitIsGroupLeader(UnitName("player")) then
+			StaticPopupDialogs["CREATION_CONFIRMATION"] = {
+			text = "Do you want to list your key ?",
+			button1 = "Yes",
+			button2 = "No",
+			OnAccept = function()
+				CreateMythicGroup()
+			end,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+			preferredIndex = 3,
+			}
+    
+			StaticPopup_Show ("CREATION_CONFIRMATION")
+        end
+    end
+    return
+end
+
+local function DisplayPopUpLeadTransfer(winner)
+    if GetNumGroupMembers() < 5 then
+        if UnitIsGroupLeader(UnitName("player")) then
+            StaticPopupDialogs["LEADPROMOTE_TRANSFER"] = {
+            text = "TRANSFERING GROUP LEADERSHIP",
+            OnCancel = function()
+				FirePromotionEvent(winner)
+            end,
+            timeout = 2,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+            }
+    
+            StaticPopup_Show ("LEADPROMOTE_TRANSFER")
+        end
+    end
+    return
+end
+
+local function DisplayPopUpLeadPromote(winner)
+    if GetNumGroupMembers() < 5 then
+        if UnitIsGroupLeader(UnitName("player")) then
+            StaticPopupDialogs["LEADPROMOTE_CONFIRMATION"] = {
+            text = "Do you want to promote the winner of the roll and list the group ?",
+            button1 = "Yes",
+            button2 = "No",
+            OnAccept = function()
+				PromoteToLeader(winner)
+				DisplayPopUpLeadTransfer(winner)
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+            }
+    
+            StaticPopup_Show ("LEADPROMOTE_CONFIRMATION")
+        end
+    end
+    return
+end
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:SetScript("OnShow", function()
@@ -262,7 +349,7 @@ local function CreateMainFrame()
     content:SetPoint("TOPLEFT")
     content:SetPoint("TOPRIGHT")
     content:SetWidth(f.keyList:GetWidth())
---     content:SetSize(f.keyList:GetWidth(), 450)
+	-- content:SetSize(f.keyList:GetWidth(), 450)
     f.keyList:SetScrollChild(content)
     f.keyList.content = content
 
@@ -287,7 +374,9 @@ frame:SetScript(
                     BroadcastKey()
                 elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
-                end
+                elseif message == "PROMOTE_LEADER" then
+					DisplayPopupCreation(winner)
+				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
             local message = ...
@@ -325,6 +414,7 @@ frame:SetScript(
                             string.format("Le gagnant est %s avec un roll de %d!", winner, highestRoll),
                             GetGroupType()
                         )
+						DisplayPopUpLeadPromote(winner)
                     end
                 end
             end
@@ -332,7 +422,7 @@ frame:SetScript(
             BroadcastKey()
         elseif event == "GROUP_ROSTER_UPDATE" then
             BroadcastKey()
-        end
+		end
     end
 )
 
