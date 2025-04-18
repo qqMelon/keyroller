@@ -159,7 +159,6 @@ local function DisplayPopUpLeadTransfer(winner)
             StaticPopupDialogs["LEADPROMOTE_TRANSFER"] = {
             text = "TRANSFERING GROUP LEADERSHIP",
             OnCancel = function()
-				--PromoteToLeader(winner)
 				FirePromotionEvent(winner)
             end,
             timeout = 2,
@@ -183,7 +182,6 @@ local function DisplayPopUpLeadPromote(winner)
             button2 = "No",
             OnAccept = function()
 				PromoteToLeader(winner)
-				--FirePromotionEvent(winner)
 				DisplayPopUpLeadTransfer(winner)
             end,
             timeout = 0,
@@ -333,17 +331,6 @@ local function CreateMainFrame()
         "OnClick",
         function()
             StartRoll()
-        end
-    )
-    
-        f.TButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-    f.TButton:SetPoint("BOTTOMLEFT", 0, 0)
-    f.TButton:SetSize(120, 25)
-    f.TButton:SetText("TEST")
-    f.TButton:SetScript(
-        "OnClick",
-        function()
-            DisplayPopUpLeadPromote()
         end
     )
 
