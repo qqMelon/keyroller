@@ -14,6 +14,7 @@ frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("BAG_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
+frame:RegisterEvent("PARTY_LEADER_CHANGED")
 
 local ADDON_PREFIX = "KR"
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
@@ -324,6 +325,7 @@ local function CreateMainFrame()
     f.title:SetText("KEY ROLLER")
 
     f.rollButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+	f.rollButton:RegisterEvent ("PARTY_LEADER_CHANGED")
     f.rollButton:SetPoint("BOTTOM", 5, 5)
     f.rollButton:SetSize(120, 25)
     f.rollButton:SetText("Roll the Keys !")
@@ -333,6 +335,22 @@ local function CreateMainFrame()
             StartRoll()
         end
     )
+	f.rollButton:SetScript(
+		"OnEvent",
+		function()
+			if UnitIsGroupLeader(UnitName("player")) then
+				f.rollButton:Enable()
+			else
+				f.rollButton:Disable()
+			end
+		end
+	)
+	
+	if UnitIsGroupLeader(UnitName("player")) then
+		f.rollButton:Enable()
+	else
+		f.rollButton:Disable()
+	end
 
     f.closeButton = CreateFrame("Button", nil, f, "UIPanelCloseButton")
     f.closeButton:SetPoint("TOPRIGHT", -5, -5)
