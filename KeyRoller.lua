@@ -162,12 +162,13 @@ local function DisplayPopUpLeadTransfer(winner)
             OnCancel = function()
 				FirePromotionEvent(winner)
             end,
+			sound = levelup2,
             timeout = 2,
             whileDead = true,
             hideOnEscape = true,
             preferredIndex = 3,
             }
-    
+			
             StaticPopup_Show ("LEADPROMOTE_TRANSFER")
         end
     end
@@ -371,7 +372,11 @@ local function CreateMainFrame()
     f.keyList:SetScrollChild(content)
     f.keyList.content = content
 
-
+	local addOnVersion = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	addOnVersion:SetPoint("BOTTOMRIGHT", -5, 5)
+	addOnVersion:SetText("v. "..C_AddOns.GetAddOnMetadata("keyroller", "Version"))
+	
+	
     return f
 end
 
