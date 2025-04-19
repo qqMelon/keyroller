@@ -59,46 +59,30 @@ end
 
 local function RequestKeys()
     if not IsInGroup() then
-        print("Tu dois être dans un groupe pour demander les clefs!")
+        print("You have to be in a group to ask for the keys")
         return
     end
 
-    playerKeys = {} -- Réinitialise la liste des clefs
-    BroadcastKey() -- Envoie votre clef
-    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType()) -- Demande les clefs
-    print("Demande de clefs envoyée au groupe.")
+    playerKeys = {}
+    BroadcastKey() -- Send key
+    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType()) -- Call Keys
 end
 
 local function GetColorForLevel(level)
     if level >= 16 then
         return "|cffff8000" -- orange
     elseif level >= 11 then
-        return "|cffa335ee" -- violet
+        return "|cffa335ee" -- purple
     elseif level >= 4 then
-        return "|cff0070dd" -- bleu
+        return "|cff0070dd" -- blue
     else
-        return "|cff1eff00" -- vert
-    end
-end
-
-local function ExportKeysToChat()
-    if not IsInGroup() then
-        print("Tu dois être dans un groupe pour exporter les clefs!")
-        return
-    end
-
-    SendChatMessage("=== Clefs Mythiques du Groupe ===", GetGroupType())
-    for player, key in pairs(playerKeys) do
-        if key.level >= minKeyLevel and key.level <= maxKeyLevel then
-            local message = string.format("%s: %s +%d", player, key.dungeon, key.level)
-            SendChatMessage(message, GetGroupType())
-        end
+        return "|cff1eff00" -- green
     end
 end
 
 local function StartRoll()
     if not IsInGroup() then
-        print("Tu dois être dans un groupe pour lancer un roll!")
+        print("You have to be in a band to launch a roll")
         return
     end
 
@@ -207,7 +191,7 @@ end)
 f:RegisterEvent("GROUP_ROSTER_UPDATE")
 f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" and prefix == "KR_ADDON" then
-        -- Décode et stocke la clé reçue
+        -- Decode and save received key
         local name, level, dungeon = strsplit(":", message)
         name, level, dungeon = name or "?", tonumber(level), dungeon or "?"
         if name and level and dungeon then
@@ -239,23 +223,21 @@ local function UpdateKeyList(content)
 
     -- Headers
     local header = CreateFrame("Frame", nil, content)
---     header:SetSize(content:GetWidth(), rowHeight)
---     header:SetPoint("TOPLEFT", 0, 0)
     header:SetPoint("TOPLEFT", 0, 0)
     header:SetPoint("TOPRIGHT", 0, 0)
     header:SetHeight(rowHeight)
 
     local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h1:SetPoint("LEFT", 5, 0)
-    h1:SetText("Nom du joueur")
+    h1:SetText("Player")
 
     local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h2:SetPoint("CENTER", header, "CENTER", 0, 0)
-    h2:SetText("Niveau")
+    h2:SetText("Level")
 
     local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h3:SetPoint("RIGHT", -5, 0)
-    h3:SetText("Donjon")
+    h3:SetText("Dongeon")
 
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
@@ -301,7 +283,7 @@ end
 
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "KRFrame", UIParent, "BackdropTemplate")
-    f:SetSize(490, 350) -- Largeur - Hauteur
+    f:SetSize(490, 350) -- width - height
     f:SetPoint("CENTER")
     f:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
@@ -349,7 +331,6 @@ local function CreateMainFrame()
     content:SetPoint("TOPLEFT")
     content:SetPoint("TOPRIGHT")
     content:SetWidth(f.keyList:GetWidth())
-	-- content:SetSize(f.keyList:GetWidth(), 450)
     f.keyList:SetScrollChild(content)
     f.keyList.content = content
 
@@ -380,7 +361,6 @@ frame:SetScript(
             end
         elseif event == "CHAT_MSG_SYSTEM" then
             local message = ...
---             print("[DEBUG] Message reçu: " .. tostring(message))
 			local player, roll, min, max = string.match(message, "^(.-)%s.-(%d+)%s%((%d+)%-(%d+)%)")
             if player and isRollInProgress then
                 rollResults[player] = tonumber(roll)
@@ -412,7 +392,7 @@ frame:SetScript(
 
                     if winner then
                         SendChatMessage(
-                            string.format("Le gagnant est %s avec un roll de %d!", winner, highestRoll),
+                            string.format("The winner is %s with: %d", winner, highestRoll),
                             GetGroupType()
                         )
 						DisplayPopUpLeadPromote(winner)
@@ -427,7 +407,7 @@ frame:SetScript(
     end
 )
 
--- Commandes
+-- Commands
 -- luacheck: globals SLASH_KR1
 SLASH_KR1 = "/kr"
 SlashCmdList["KR"] = function()
