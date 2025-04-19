@@ -380,7 +380,8 @@ frame:SetScript(
             end
         elseif event == "CHAT_MSG_SYSTEM" then
             local message = ...
-			local player, roll, min, max = string.match(message, "(.+) (%d+) (1-100)")
+--             print("[DEBUG] Message reçu: " .. tostring(message))
+			local player, roll, min, max = string.match(message, "^(.-)%s.-(%d+)%s%((%d+)%-(%d+)%)")
             if player and isRollInProgress then
                 rollResults[player] = tonumber(roll)
 
