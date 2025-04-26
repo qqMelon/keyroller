@@ -9,6 +9,10 @@ local rollHistory = {}
 local minKeyLevel = 0
 local maxKeyLevel = 99
 local text = nil
+local versionList = {}
+local versTxt = ""
+local isVersFont = false
+local versFont = nil
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("BAG_UPDATE")
@@ -98,6 +102,13 @@ end
 local function FirePromotionEvent(winner)
 	C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "PROMOTE_LEADER", GetGroupType())
 	SendChatMessage(string.format("=== THE NEW LEADER OF THE GROUP IS %s ===", winner), GetGroupType())
+	return
+end
+
+local function GetPlayerAddonVersion ()
+	--if UnitIsGroupLeader(UnitName("player")) then
+		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "ADDON_VERSION", GetGroupType())
+	--end
 	return
 end
 
@@ -192,7 +203,7 @@ end)
 
 f:RegisterEvent("GROUP_ROSTER_UPDATE")
 f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
-    if event == "CHAT_MSG_ADDON" and prefix == "KR_ADDON" then
+    if event == "CHAT_MSG_ADDON" and prefix == "KR" then
         -- Decode and save received key
         local name, level, dungeon = strsplit(":", message)
         name, level, dungeon = name or "?", tonumber(level), dungeon or "?"
@@ -204,6 +215,71 @@ f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
         end
     end
 end)
+
+f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
+    if event == "CHAT_MSG_ADDON" and prefix == "KR" and string.find(message, "VERSION_PAYLOAD:") then
+		--if UnitIsGroupLeader(UnitName("player")) then
+			local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(%a+):(%A+)")
+			--table.insert.insert(versionList,{player, version})
+			versionList[player] = version
+		--end
+		
+    end
+end)
+
+local function CreateVersionFrame ()
+	
+	--creation of the version frame
+    local f = CreateFrame("Frame", "VersFrame", UIParent, "BackdropTemplate")
+	    f:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = { left = 3, right = 1, top = 3, bottom = 3 }
+    })
+    f:SetSize(180, 80)
+	f:SetPoint("BOTTOMRIGHT", "KRFrame", 178,0)
+	    f:SetBackdropColor(0, 0, 0, 0.8)
+    f:SetMovable(true)
+    f:EnableMouse(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", f.StartMoving)
+    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+	f:Hide()
+
+	return f
+end
+
+local function DisplayVersionFrame ()
+	if not isVersFont then
+		versFont = VersFrame:CreateFontString("VersFontString", "OVERLAY", "GameFontHighlight")
+		isVersFont = true
+	end
+		
+	if VersFrame then
+		if VersFrame:IsShown() then
+			VersFrame:Hide()
+			versTxt = ""
+			versFont:SetText("")
+		else
+			for k, v in pairs(versionList) do
+				versTxt = versTxt .."v. "..v.."   "..k .."\n"
+			end
+			versFont:SetText(versTxt)
+			versFont:SetPoint("LEFT", 5, 0)
+			VersFrame:Show()
+		end
+	end
+end
+
+local function findGroupLeader()
+	for i = 1, GetNumGroupMembers() do
+		local name = GetRaidRosterInfo(i)
+		if UnitIsGroupLeader(UnitName(name)) then
+			return name
+		end
+	end
+end
 
 local function UpdateKeyList(content)
     if not content then return end
@@ -338,6 +414,14 @@ local function CreateMainFrame()
     f.closeButton = CreateFrame("Button", nil, f, "UIPanelCloseButton")
     f.closeButton:SetPoint("TOPRIGHT", -5, -5)
     f.closeButton:SetSize(24, 24)
+	f.closeButton:SetScript(
+        "OnClick",
+        function()
+			KRFrame:Hide()
+            VersFrame:Hide()
+			versTxt=""
+        end
+    )
 
     table.insert(UISpecialFrames, "KRFrame")
 
@@ -353,10 +437,36 @@ local function CreateMainFrame()
     f.keyList:SetScrollChild(content)
     f.keyList.content = content
 
-	local addOnVersion = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	addOnVersion:SetPoint("BOTTOMRIGHT", -5, 5)
-	addOnVersion:SetText("v. "..C_AddOns.GetAddOnMetadata("keyroller", "Version"))
+
+	f.versButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+	f.versButton:RegisterEvent ("PARTY_LEADER_CHANGED")
+    f.versButton:SetPoint("BOTTOMRIGHT", -5, 5)
+    f.versButton:SetSize(65, 25)
+    f.versButton:SetText("v. "..C_AddOns.GetAddOnMetadata("keyroller", "Version"))
+	f.versButton:SetScript(
+        "OnClick",
+        function()
+			--getting player's version data (storing in versList global variable)
+			GetPlayerAddonVersion ()
+			DisplayVersionFrame()
+        end
+    )
+	f.versButton:SetScript(
+		"OnEvent",
+		function()
+			if UnitIsGroupLeader(UnitName("player")) then
+				f.versButton:Enable()
+			else
+				f.versButton:Disable()
+			end
+		end
+	)
 	
+	if UnitIsGroupLeader(UnitName("player")) then
+		f.versButton:Enable()
+	else
+		f.versButton:Disable()
+	end
 	
     return f
 end
@@ -380,6 +490,11 @@ frame:SetScript(
                     RandomRoll(1, 100)
                 elseif message == "PROMOTE_LEADER" then
 					DisplayPopupCreation(winner)
+				elseif message == "ADDON_VERSION" then
+					local player = UnitName("player")
+					local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
+					local message = string.format("%s:%s", player, version)
+					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", sender)
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
@@ -436,6 +551,8 @@ SLASH_KR1 = "/kr"
 SlashCmdList["KR"] = function()
     if KRFrame:IsShown() then
         KRFrame:Hide()
+		VersFrame:Hide()
+		versTxt=""
     else
         KRFrame:Show()
     end
@@ -443,3 +560,4 @@ end
 
 -- Initialisation
 local mainFrame = CreateMainFrame()
+local versFrame = CreateVersionFrame()
