@@ -251,29 +251,31 @@ local function CreateVersionFrame ()
 	return f
 end
 
-local function DisplayVersionFrame ()
-	if not isVersFont then
-		versFont = VersFrame:CreateFontString("VersFontString", "OVERLAY", "GameFontHighlight")
-		for k, v in pairs(versionList) do
-			if versTxt == "" then
-				versTxt = versTxt.."v. "..v.."   "..k .."\r"
-			else
-				versTxt = versTxt .."v. "..v.."   "..k .."\r"
-			end
-		end
-		isVersFont = true
-	end
-		
-	if VersFrame then
-		if VersFrame:IsShown() then
-			VersFrame:Hide()
-			versFont:SetText("")
-		else
-			versFont:SetText(versTxt)
-			versFont:SetPoint("LEFT", 5, 0)
-			VersFrame:Show()
-		end
-	end
+local function DisplayVersionFrame()
+    if not isVersFont then
+        versFont = VersFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        versFont:SetPoint("TOPLEFT", 5, -5)
+        versFont:SetJustifyH("LEFT")
+        versFont:SetJustifyV("TOP")
+
+        local text = ""
+        for p, v in pairs(versionList) do
+            text = text .. "v. " .. v .. "   " .. p .. "\n"
+        end
+        versTxt = text
+
+        isVersFont = true
+    end
+
+    if VersFrame then
+        if VersFrame:IsShown() then
+            VersFrame:Hide()
+            versFont:SetText("")
+        else
+            versFont:SetText(versTxt)
+            VersFrame:Show()
+        end
+    end
 end
 
 local function findGroupLeader()
