@@ -228,7 +228,8 @@ f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
 end)
 
 local function CreateVersionFrame ()
-	
+	--retrieveing data
+	GetPlayerAddonVersion ()
 	--creation of the version frame
     local f = CreateFrame("Frame", "VersFrame", UIParent, "BackdropTemplate")
 	    f:SetBackdrop({
@@ -253,18 +254,21 @@ end
 local function DisplayVersionFrame ()
 	if not isVersFont then
 		versFont = VersFrame:CreateFontString("VersFontString", "OVERLAY", "GameFontHighlight")
+		for k, v in pairs(versionList) do
+			if versTxt == "" then
+				versTxt = versTxt.."v. "..v.."   "..k .."\r"
+			else
+				versTxt = versTxt .."v. "..v.."   "..k .."\r"
+			end
+		end
 		isVersFont = true
 	end
 		
 	if VersFrame then
 		if VersFrame:IsShown() then
 			VersFrame:Hide()
-			versTxt = ""
 			versFont:SetText("")
 		else
-			for k, v in pairs(versionList) do
-				versTxt = versTxt .."v. "..v.."   "..k .."\n"
-			end
 			versFont:SetText(versTxt)
 			versFont:SetPoint("LEFT", 5, 0)
 			VersFrame:Show()
@@ -419,7 +423,6 @@ local function CreateMainFrame()
         function()
 			KRFrame:Hide()
             VersFrame:Hide()
-			versTxt=""
         end
     )
 
@@ -447,26 +450,9 @@ local function CreateMainFrame()
         "OnClick",
         function()
 			--getting player's version data (storing in versList global variable)
-			GetPlayerAddonVersion ()
 			DisplayVersionFrame()
         end
     )
-	f.versButton:SetScript(
-		"OnEvent",
-		function()
-			if UnitIsGroupLeader(UnitName("player")) then
-				f.versButton:Enable()
-			else
-				f.versButton:Disable()
-			end
-		end
-	)
-	
-	if UnitIsGroupLeader(UnitName("player")) then
-		f.versButton:Enable()
-	else
-		f.versButton:Disable()
-	end
 	
     return f
 end
@@ -494,7 +480,7 @@ frame:SetScript(
 					local player = UnitName("player")
 					local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
 					local message = string.format("%s:%s", player, version)
-					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", sender)
+					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, GetGroupType())
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
@@ -552,7 +538,6 @@ SlashCmdList["KR"] = function()
     if KRFrame:IsShown() then
         KRFrame:Hide()
 		VersFrame:Hide()
-		versTxt=""
     else
         KRFrame:Show()
     end
