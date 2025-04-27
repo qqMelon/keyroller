@@ -433,7 +433,7 @@ local function CreateMainFrame()
     -- ScrollFrame
     f.keyList = CreateFrame("ScrollFrame", nil, f)
     f.keyList:SetPoint("TOPLEFT", 12, -45)
-    f.keyList:SetPoint("BOTTOMRIGHT", -30, 45)
+    f.keyList:SetPoint("BOTTOMRIGHT", -12, 45)
 
     local content = CreateFrame("Frame", nil, f.keyList)
     content:SetPoint("TOPLEFT")
