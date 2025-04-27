@@ -106,9 +106,13 @@ local function FirePromotionEvent(winner)
 end
 
 local function GetPlayerAddonVersion ()
-	--if UnitIsGroupLeader(UnitName("player")) then
+
+	if IsInGroup() then
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "ADDON_VERSION", GetGroupType())
-	--end
+	else 
+		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "ADDON_VERSION", "WHISPER", UnitName("player"))
+	end
+		
 	return
 end
 
@@ -482,7 +486,11 @@ frame:SetScript(
 					local player = UnitName("player")
 					local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
 					local message = string.format("%s:%s", player, version)
-					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, GetGroupType())
+					if IsInGroup() then
+						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "PARTY")
+					else 
+						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", UnitName("player"))
+					end
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
