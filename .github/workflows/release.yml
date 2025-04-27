@@ -24,9 +24,11 @@ jobs:
 
       - name: Set version in TOC
         run: |
+          echo "List files .. "
+          ls
           TAG_NAME=${GITHUB_REF#refs/tags/}
           echo "Updating TOC version to $TAG_NAME"
-          sed -i "s/^## Version: .*/## Version: $TAG_NAME/" KeyRoller.toc
+          sed -i "s/^## Version: .*/## Version: $TAG_NAME/" Keyroller.toc
 
       - name: Generate Changelog file
         run: chmod +x genchangelog.sh && ./genchangelog.sh
