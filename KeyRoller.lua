@@ -336,7 +336,7 @@ local function UpdateKeyList(content)
 
     local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h3:SetPoint("RIGHT", -5, 0)
-    h3:SetText("Dongeon")
+    h3:SetText("Dungeon")
 
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
@@ -459,7 +459,6 @@ local function CreateMainFrame()
 
 
 	f.versButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-	f.versButton:RegisterEvent ("PARTY_LEADER_CHANGED")
     f.versButton:SetPoint("BOTTOMRIGHT", -5, 5)
     f.versButton:SetSize(65, 25)
     f.versButton:SetText("v. "..C_AddOns.GetAddOnMetadata("keyroller", "Version"))
@@ -472,14 +471,16 @@ local function CreateMainFrame()
     )
 	
 	f.refreshButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-	f.refreshButton:RegisterEvent ("PARTY_LEADER_CHANGED")
     f.refreshButton:SetPoint("BOTTOMLEFT", 5, 5)
     f.refreshButton:SetSize(65, 25)
     f.refreshButton:SetText("Refresh")
 	f.refreshButton:SetScript(
         "OnClick",
         function()
+			print("test refresh")
 			BroadcastKey()
+			versionList = {}
+			GetPlayerAddonVersion ()
         end
     )
 	
@@ -559,6 +560,7 @@ frame:SetScript(
         elseif event == "BAG_UPDATE" then
             BroadcastKey()
         elseif event == "GROUP_ROSTER_UPDATE" or event == "GROUP_JOINED" or event == "GROUP_LEFT" then
+				print("GROUP EVENT")
             BroadcastKey()
 		end
     end
