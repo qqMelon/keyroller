@@ -273,14 +273,14 @@ local function DisplayVersionFrame()
         versFont:SetJustifyH("LEFT")
         versFont:SetJustifyV("TOP")
 
-        local text = ""
-        for p, v in pairs(versionList) do
-            text = text .. "v. " .. v .. "   " .. p .. "\n"
-        end
-        versTxt = text
-
         isVersFont = true
     end
+	
+	local text = ""
+    for p, v in pairs(versionList) do
+        text = text .. "v. " .. v .. "   " .. p .. "\n"
+    end
+    versTxt = text
 
     if VersFrame then
         if VersFrame:IsShown() then
@@ -478,8 +478,8 @@ local function CreateMainFrame()
         "OnClick",
         function()
 			print("test refresh")
-			BroadcastKey()
 			versionList = {}
+			BroadcastKey()
 			GetPlayerAddonVersion ()
         end
     )
