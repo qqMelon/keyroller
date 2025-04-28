@@ -19,6 +19,8 @@ frame:RegisterEvent("BAG_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
 frame:RegisterEvent("PARTY_LEADER_CHANGED")
+frame:RegisterEvent("GROUP_JOINED")
+frame:RegisterEvent("GROUP_LEFT")
 
 local ADDON_PREFIX = "KR"
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
@@ -58,10 +60,12 @@ local function BroadcastKey()
         local message = string.format("%s:%d", dungeonName, level)
         if IsInGroup() then
             C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
-        end
+        else 
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", UnitName("player"))
+		end
     end
 end
-
+--[[
 local function RequestKeys()
     if not IsInGroup() then
         print("You have to be in a group to ask for the keys")
@@ -71,7 +75,7 @@ local function RequestKeys()
     playerKeys = {}
     BroadcastKey() -- Send key
     C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType()) -- Call Keys
-end
+end ]]--
 
 local function GetColorForLevel(level)
     if level >= 16 then
@@ -197,16 +201,19 @@ local function DisplayPopUpLeadPromote(winner)
     return
 end
 
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("CHAT_MSG_ADDON")
+--[[
 f:SetScript("OnShow", function()
     if IsInGroup() then
         SendOwnKey()
     end
-end)
+end) ]]--
 
-f:RegisterEvent("GROUP_ROSTER_UPDATE")
-f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
+--[[
+frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+frame:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" and prefix == "KR" then
         -- Decode and save received key
         local name, level, dungeon = strsplit(":", message)
@@ -218,8 +225,12 @@ f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
             end
         end
     end
-end)
-
+end) ]]--
+f:RegisterEvent("GROUP_ROSTER_UPDATE")
+f:RegisterEvent("GROUP_LEFT")
+f:RegisterEvent("GROUP_JOINED")
+f:RegisterEvent("BAG_UPDATE")
+f:RegisterEvent("CHAT_MSG_ADDON")
 f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" and prefix == "KR" and string.find(message, "VERSION_PAYLOAD:") then
 		--if UnitIsGroupLeader(UnitName("player")) then
@@ -242,7 +253,7 @@ local function CreateVersionFrame ()
         edgeSize = 12,
         insets = { left = 3, right = 1, top = 3, bottom = 3 }
     })
-    f:SetSize(180, 80)
+    f:SetSize(180, 72)
 	f:SetPoint("BOTTOMRIGHT", "KRFrame", 178,0)
 	    f:SetBackdropColor(0, 0, 0, 0.8)
     f:SetMovable(true)
@@ -460,6 +471,18 @@ local function CreateMainFrame()
         end
     )
 	
+	f.refreshButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+	f.refreshButton:RegisterEvent ("PARTY_LEADER_CHANGED")
+    f.refreshButton:SetPoint("BOTTOMLEFT", 5, 5)
+    f.refreshButton:SetSize(65, 25)
+    f.refreshButton:SetText("Refresh")
+	f.refreshButton:SetScript(
+        "OnClick",
+        function()
+			BroadcastKey()
+        end
+    )
+	
     return f
 end
 
@@ -487,7 +510,7 @@ frame:SetScript(
 					local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
 					local message = string.format("%s:%s", player, version)
 					if IsInGroup() then
-						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "PARTY")
+						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, GetGroupType())
 					else 
 						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", UnitName("player"))
 					end
@@ -535,7 +558,7 @@ frame:SetScript(
             end
         elseif event == "BAG_UPDATE" then
             BroadcastKey()
-        elseif event == "GROUP_ROSTER_UPDATE" then
+        elseif event == "GROUP_ROSTER_UPDATE" or event == "GROUP_JOINED" or event == "GROUP_LEFT" then
             BroadcastKey()
 		end
     end
