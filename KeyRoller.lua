@@ -191,24 +191,6 @@ local function DisplayPopUpLeadPromote(winner)
     return
 end
 
-local function DisplayPopUpRefreshData()
-    StaticPopupDialogs["GATHERING_DATAS"] = {
-    text = "GATHERING DATAS ...",
-	OnCancel = function ()
-		refreshLock = false
-	end,
-	sound = levelup2,
-    timeout = 2,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-    }
-			
-    StaticPopup_Show ("GATHERING_DATAS")
-end
-
-
-
 local f = CreateFrame("Frame")
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -247,6 +229,11 @@ local function CreateVersionFrame ()
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	f:Hide()
+	f:SetScript("OnHide", function()
+		versFont:SetText("")
+		refreshLock = false
+	end
+	)
 
 	tinsert(UISpecialFrames, "VersFrame")
 	return f
@@ -268,24 +255,25 @@ local function DisplayVersionFrame()
     end
     versTxt = text
 
-    if VersFrame then
-        if VersFrame:IsShown() then
-            VersFrame:Hide()
-            versFont:SetText("")
-        else
-            versFont:SetText(versTxt)
-            VersFrame:Show()
-        end
-    end
+    versFont:SetText(versTxt)
+    VersFrame:Show()
+
 end
 
-local function findGroupLeader()
-	for i = 1, GetNumGroupMembers() do
-		local name = GetRaidRosterInfo(i)
-		if UnitIsGroupLeader(UnitName(name)) then
-			return name
-		end
-	end
+local function DisplayPopUpRefreshData()
+    StaticPopupDialogs["GATHERING_DATAS"] = {
+    text = "GATHERING DATAS ...",
+	OnCancel = function ()
+		DisplayVersionFrame()
+	end,
+	sound = levelup2,
+    timeout = 2,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+    }
+			
+    StaticPopup_Show ("GATHERING_DATAS")
 end
 
 local function UpdateKeyList(content)
@@ -451,27 +439,20 @@ local function CreateMainFrame()
 	f.versButton:SetScript(
         "OnClick",
         function()
-			--getting player's version data (storing in versList global variable)
-			DisplayVersionFrame()
-        end
-    )
-	
-	f.refreshButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-    f.refreshButton:SetPoint("BOTTOMLEFT", 5, 5)
-    f.refreshButton:SetSize(65, 25)
-    f.refreshButton:SetText("Refresh")
-	f.refreshButton:SetScript(
-        "OnClick",
-        function()
 			if not refreshLock then
 				refreshLock = true
 				versionList = {}
+				--getting player's version data (storing in versList global variable)
 				GetPlayerAddonVersion ()
-				BroadcastKey()
 				DisplayPopUpRefreshData()
 			end
-        end
-    )
+			
+			if VersFrame then
+				if VersFrame:IsShown() then
+					VersFrame:Hide()
+				end
+			end
+		end )
 	
 	tinsert(UISpecialFrames, "Frame")
 	
@@ -499,11 +480,7 @@ frame:SetScript(
 					local player = UnitName("player")
 					local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
 					local message = string.format("%s:%s", player, version)
-					if IsInGroup() then
-						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, GetGroupType())
-					else 
-						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", UnitName("player"))
-					end
+					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", sender)
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
@@ -549,7 +526,6 @@ frame:SetScript(
         elseif event == "BAG_UPDATE" then
             BroadcastKey()
         elseif event == "GROUP_ROSTER_UPDATE" or event == "GROUP_JOINED" or event == "GROUP_LEFT" then
-				print("GROUP EVENT")
             BroadcastKey()
 		end
     end
