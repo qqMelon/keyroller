@@ -13,12 +13,15 @@ local versionList = {}
 local versTxt = ""
 local isVersFont = false
 local versFont = nil
+local refreshLock = false
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("BAG_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
 frame:RegisterEvent("PARTY_LEADER_CHANGED")
+frame:RegisterEvent("GROUP_JOINED")
+frame:RegisterEvent("GROUP_LEFT")
 
 local ADDON_PREFIX = "KR"
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
@@ -58,19 +61,10 @@ local function BroadcastKey()
         local message = string.format("%s:%d", dungeonName, level)
         if IsInGroup() then
             C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
-        end
+        else 
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", UnitName("player"))
+		end
     end
-end
-
-local function RequestKeys()
-    if not IsInGroup() then
-        print("You have to be in a group to ask for the keys")
-        return
-    end
-
-    playerKeys = {}
-    BroadcastKey() -- Send key
-    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType()) -- Call Keys
 end
 
 local function GetColorForLevel(level)
@@ -106,9 +100,13 @@ local function FirePromotionEvent(winner)
 end
 
 local function GetPlayerAddonVersion ()
-	--if UnitIsGroupLeader(UnitName("player")) then
+
+	if IsInGroup() then
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "ADDON_VERSION", GetGroupType())
-	--end
+	else 
+		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "ADDON_VERSION", "WHISPER", UnitName("player"))
+	end
+		
 	return
 end
 
@@ -195,27 +193,11 @@ end
 
 local f = CreateFrame("Frame")
 f:RegisterEvent("CHAT_MSG_ADDON")
-f:SetScript("OnShow", function()
-    if IsInGroup() then
-        SendOwnKey()
-    end
-end)
-
 f:RegisterEvent("GROUP_ROSTER_UPDATE")
-f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
-    if event == "CHAT_MSG_ADDON" and prefix == "KR" then
-        -- Decode and save received key
-        local name, level, dungeon = strsplit(":", message)
-        name, level, dungeon = name or "?", tonumber(level), dungeon or "?"
-        if name and level and dungeon then
-            keyList[name] = { level = level, dungeon = dungeon }
-            if mainFrame and mainFrame.keyList then
-                UpdateKeyList(mainFrame.keyList.content)
-            end
-        end
-    end
-end)
-
+f:RegisterEvent("GROUP_LEFT")
+f:RegisterEvent("GROUP_JOINED")
+f:RegisterEvent("BAG_UPDATE")
+f:RegisterEvent("CHAT_MSG_ADDON")
 f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
     if event == "CHAT_MSG_ADDON" and prefix == "KR" and string.find(message, "VERSION_PAYLOAD:") then
 		--if UnitIsGroupLeader(UnitName("player")) then
@@ -228,8 +210,6 @@ f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
 end)
 
 local function CreateVersionFrame ()
-	--retrieveing data
-	GetPlayerAddonVersion ()
 	--creation of the version frame
     local f = CreateFrame("Frame", "VersFrame", UIParent, "BackdropTemplate")
 	    f:SetBackdrop({
@@ -238,16 +218,22 @@ local function CreateVersionFrame ()
         edgeSize = 12,
         insets = { left = 3, right = 1, top = 3, bottom = 3 }
     })
-    f:SetSize(180, 80)
+    f:SetSize(180, 72)
 	f:SetPoint("BOTTOMRIGHT", "KRFrame", 178,0)
 	    f:SetBackdropColor(0, 0, 0, 0.8)
-    f:SetMovable(true)
-    f:EnableMouse(true)
+    f:SetMovable(false)
+    f:EnableMouse(false)
     f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	f:Hide()
+	f:SetScript("OnHide", function()
+		versFont:SetText("")
+		refreshLock = false
+	end
+	)
 
+	tinsert(UISpecialFrames, "VersFrame")
 	return f
 end
 
@@ -258,33 +244,34 @@ local function DisplayVersionFrame()
         versFont:SetJustifyH("LEFT")
         versFont:SetJustifyV("TOP")
 
-        local text = ""
-        for p, v in pairs(versionList) do
-            text = text .. "v. " .. v .. "   " .. p .. "\n"
-        end
-        versTxt = text
-
         isVersFont = true
     end
-
-    if VersFrame then
-        if VersFrame:IsShown() then
-            VersFrame:Hide()
-            versFont:SetText("")
-        else
-            versFont:SetText(versTxt)
-            VersFrame:Show()
-        end
+	
+	local text = ""
+    for p, v in pairs(versionList) do
+        text = text .. "v. " .. v .. "   " .. p .. "\n"
     end
+    versTxt = text
+
+    versFont:SetText(versTxt)
+    VersFrame:Show()
+
 end
 
-local function findGroupLeader()
-	for i = 1, GetNumGroupMembers() do
-		local name = GetRaidRosterInfo(i)
-		if UnitIsGroupLeader(UnitName(name)) then
-			return name
-		end
-	end
+local function DisplayPopUpRefreshData()
+    StaticPopupDialogs["GATHERING_DATAS"] = {
+    text = "GATHERING DATAS ...",
+	OnCancel = function ()
+		DisplayVersionFrame()
+	end,
+	sound = levelup2,
+    timeout = 2,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+    }
+			
+    StaticPopup_Show ("GATHERING_DATAS")
 end
 
 local function UpdateKeyList(content)
@@ -321,7 +308,7 @@ local function UpdateKeyList(content)
 
     local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h3:SetPoint("RIGHT", -5, 0)
-    h3:SetText("Dongeon")
+    h3:SetText("Dungeon")
 
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
@@ -444,17 +431,28 @@ local function CreateMainFrame()
 
 
 	f.versButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-	f.versButton:RegisterEvent ("PARTY_LEADER_CHANGED")
     f.versButton:SetPoint("BOTTOMRIGHT", -5, 5)
     f.versButton:SetSize(65, 25)
     f.versButton:SetText("v. "..C_AddOns.GetAddOnMetadata("keyroller", "Version"))
 	f.versButton:SetScript(
         "OnClick",
         function()
-			--getting player's version data (storing in versList global variable)
-			DisplayVersionFrame()
-        end
-    )
+			if not refreshLock then
+				refreshLock = true
+				versionList = {}
+				--getting player's version data (storing in versList global variable)
+				GetPlayerAddonVersion ()
+				DisplayPopUpRefreshData()
+			end
+			
+			if VersFrame then
+				if VersFrame:IsShown() then
+					VersFrame:Hide()
+				end
+			end
+		end )
+	
+	tinsert(UISpecialFrames, "Frame")
 	
     return f
 end
@@ -472,8 +470,6 @@ frame:SetScript(
                         playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
-                elseif message == "REQUEST_KEY" then
-                    BroadcastKey()
                 elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
                 elseif message == "PROMOTE_LEADER" then
@@ -482,7 +478,7 @@ frame:SetScript(
 					local player = UnitName("player")
 					local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
 					local message = string.format("%s:%s", player, version)
-					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, GetGroupType())
+					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", sender)
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
@@ -527,7 +523,7 @@ frame:SetScript(
             end
         elseif event == "BAG_UPDATE" then
             BroadcastKey()
-        elseif event == "GROUP_ROSTER_UPDATE" then
+        elseif event == "GROUP_ROSTER_UPDATE" or event == "GROUP_JOINED" or event == "GROUP_LEFT" then
             BroadcastKey()
 		end
     end
