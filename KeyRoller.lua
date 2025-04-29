@@ -13,6 +13,7 @@ local versionList = {}
 local versTxt = ""
 local isVersFont = false
 local versFont = nil
+local refreshLock = false
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("BAG_UPDATE")
@@ -65,17 +66,6 @@ local function BroadcastKey()
 		end
     end
 end
---[[
-local function RequestKeys()
-    if not IsInGroup() then
-        print("You have to be in a group to ask for the keys")
-        return
-    end
-
-    playerKeys = {}
-    BroadcastKey() -- Send key
-    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType()) -- Call Keys
-end ]]--
 
 local function GetColorForLevel(level)
     if level >= 16 then
@@ -201,31 +191,26 @@ local function DisplayPopUpLeadPromote(winner)
     return
 end
 
+local function DisplayPopUpRefreshData()
+    StaticPopupDialogs["GATHERING_DATAS"] = {
+    text = "GATHERING DATAS ...",
+	OnCancel = function ()
+		refreshLock = false
+	end,
+	sound = levelup2,
+    timeout = 2,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+    }
+			
+    StaticPopup_Show ("GATHERING_DATAS")
+end
+
+
 
 local f = CreateFrame("Frame")
 f:RegisterEvent("CHAT_MSG_ADDON")
---[[
-f:SetScript("OnShow", function()
-    if IsInGroup() then
-        SendOwnKey()
-    end
-end) ]]--
-
---[[
-frame:RegisterEvent("GROUP_ROSTER_UPDATE")
-frame:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
-    if event == "CHAT_MSG_ADDON" and prefix == "KR" then
-        -- Decode and save received key
-        local name, level, dungeon = strsplit(":", message)
-        name, level, dungeon = name or "?", tonumber(level), dungeon or "?"
-        if name and level and dungeon then
-            keyList[name] = { level = level, dungeon = dungeon }
-            if mainFrame and mainFrame.keyList then
-                UpdateKeyList(mainFrame.keyList.content)
-            end
-        end
-    end
-end) ]]--
 f:RegisterEvent("GROUP_ROSTER_UPDATE")
 f:RegisterEvent("GROUP_LEFT")
 f:RegisterEvent("GROUP_JOINED")
@@ -256,13 +241,14 @@ local function CreateVersionFrame ()
     f:SetSize(180, 72)
 	f:SetPoint("BOTTOMRIGHT", "KRFrame", 178,0)
 	    f:SetBackdropColor(0, 0, 0, 0.8)
-    f:SetMovable(true)
-    f:EnableMouse(true)
+    f:SetMovable(false)
+    f:EnableMouse(false)
     f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	f:Hide()
 
+	tinsert(UISpecialFrames, "VersFrame")
 	return f
 end
 
@@ -477,12 +463,17 @@ local function CreateMainFrame()
 	f.refreshButton:SetScript(
         "OnClick",
         function()
-			print("test refresh")
-			versionList = {}
-			BroadcastKey()
-			GetPlayerAddonVersion ()
+			if not refreshLock then
+				refreshLock = true
+				versionList = {}
+				GetPlayerAddonVersion ()
+				BroadcastKey()
+				DisplayPopUpRefreshData()
+			end
         end
     )
+	
+	tinsert(UISpecialFrames, "Frame")
 	
     return f
 end
@@ -500,8 +491,6 @@ frame:SetScript(
                         playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
-                elseif message == "REQUEST_KEY" then
-                    BroadcastKey()
                 elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
                 elseif message == "PROMOTE_LEADER" then
