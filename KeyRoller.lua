@@ -210,8 +210,6 @@ f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
 end)
 
 local function CreateVersionFrame ()
-	--retrieveing data
-	GetPlayerAddonVersion ()
 	--creation of the version frame
     local f = CreateFrame("Frame", "VersFrame", UIParent, "BackdropTemplate")
 	    f:SetBackdrop({
