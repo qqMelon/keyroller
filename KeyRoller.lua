@@ -59,6 +59,12 @@ local function BroadcastKey()
     local dungeonName, level = GetPlayerMythicKey()
     if dungeonName and level then
         local message = string.format("%s:%d", dungeonName, level)
+		if UnitIsGroupLeader(UnitName("player")) then
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", GetGroupType())
+		elseif not IsInGroup() then 
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", "WHISPER", UnitName("player"))
+		end
+		
         if IsInGroup() then
             C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
         else 
@@ -479,6 +485,8 @@ frame:SetScript(
 					local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
 					local message = string.format("%s:%s", player, version)
 					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", sender)
+				elseif message == "CLEARING_DATAS" then
+					playerKeys = {}
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
@@ -521,10 +529,8 @@ frame:SetScript(
                     end
                 end
             end
-        elseif event == "BAG_UPDATE" then
-            BroadcastKey()
-        elseif event == "GROUP_ROSTER_UPDATE" or event == "GROUP_JOINED" or event == "GROUP_LEFT" then
-            BroadcastKey()
+        elseif event == "BAG_UPDATE" or event == "GROUP_ROSTER_UPDATE" then
+				BroadcastKey()
 		end
     end
 )
