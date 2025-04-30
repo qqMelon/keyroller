@@ -14,6 +14,7 @@ local versTxt = ""
 local isVersFont = false
 local versFont = nil
 local refreshLock = false
+local refreshLockKey = false
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("BAG_UPDATE")
@@ -280,6 +281,22 @@ local function DisplayPopUpRefreshData()
     StaticPopup_Show ("GATHERING_DATAS")
 end
 
+local function DisplayPopUpRefreshDataKey()
+    StaticPopupDialogs["GATHERING_DATAS_KEY"] = {
+    text = "GATHERING DATAS ...",
+	OnCancel = function ()
+		refreshLockKey = false
+	end,
+	sound = levelup2,
+    timeout = 2,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+    }
+			
+    StaticPopup_Show ("GATHERING_DATAS_KEY")
+end
+
 local function UpdateKeyList(content)
     if not content then return end
 
@@ -457,6 +474,39 @@ local function CreateMainFrame()
 				end
 			end
 		end )
+		
+	f.refreshBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+	f.refreshBtn:RegisterEvent ("PARTY_LEADER_CHANGED")
+    f.refreshBtn:SetPoint("BOTTOMLEFT", 5, 5)
+    f.refreshBtn:SetSize(65, 25)
+    f.refreshBtn:SetText("Refresh")
+	f.refreshBtn:SetScript(
+        "OnClick",
+        function()
+			if not refreshLockKey then
+				if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
+					refreshLockKey = true
+					BroadcastKey()
+					DisplayPopUpRefreshDataKey()
+				end
+			end
+		end )
+	f.refreshBtn:SetScript(
+		"OnEvent",
+		function()
+			if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
+				f.refreshBtn:Enable()
+			else
+				f.refreshBtn:Disable()
+			end
+		end
+	)
+	
+	if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
+		f.refreshBtn:Enable()
+	else
+		f.refreshBtn:Disable()
+	end
 	
 	tinsert(UISpecialFrames, "Frame")
 	
@@ -529,8 +579,6 @@ frame:SetScript(
                     end
                 end
             end
-        elseif event == "BAG_UPDATE" or event == "GROUP_ROSTER_UPDATE" then
-				BroadcastKey()
 		end
     end
 )
