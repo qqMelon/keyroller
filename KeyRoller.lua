@@ -481,6 +481,7 @@ local function CreateMainFrame()
 		
 	f.refreshBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
 	f.refreshBtn:RegisterEvent ("PARTY_LEADER_CHANGED")
+	f.refreshBtn:RegisterEvent("GROUP_ROSTER_UPDATE")
     f.refreshBtn:SetPoint("BOTTOMLEFT", 5, 5)
     f.refreshBtn:SetSize(65, 25)
     f.refreshBtn:SetText("Refresh")
