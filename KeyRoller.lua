@@ -56,15 +56,19 @@ local function GetGroupType()
     return IsInRaid() and "RAID" or "PARTY"
 end
 
-local function BroadcastKey()
-    local dungeonName, level = GetPlayerMythicKey()
-    if dungeonName and level then
-        local message = string.format("%s:%d", dungeonName, level)
+local function ClearingDatas ()
 		if UnitIsGroupLeader(UnitName("player")) then
 			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", GetGroupType())
 		elseif not IsInGroup() then 
 			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", "WHISPER", UnitName("player"))
 		end
+	return
+end
+
+local function BroadcastKey()
+    local dungeonName, level = GetPlayerMythicKey()
+    if dungeonName and level then
+        local message = string.format("%s:%d", dungeonName, level)
 		
         if IsInGroup() then
             C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
@@ -486,7 +490,7 @@ local function CreateMainFrame()
 			if not refreshLockKey then
 				if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
 					refreshLockKey = true
-					BroadcastKey()
+					ClearingDatas()
 					DisplayPopUpRefreshDataKey()
 				end
 			end
@@ -537,6 +541,7 @@ frame:SetScript(
 					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", sender)
 				elseif message == "CLEARING_DATAS" then
 					playerKeys = {}
+					BroadcastKey()
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
