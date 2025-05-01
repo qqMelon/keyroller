@@ -585,7 +585,7 @@ frame:SetScript(
                     end
                 end
             end
-		end
+		    end
     end
 )
 
