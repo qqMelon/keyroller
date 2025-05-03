@@ -534,7 +534,9 @@ frame:SetScript(
             if prefix == ADDON_PREFIX then
                 if string.find(message, "^KEY:") then
                     local _, _, dungeonName, level = string.find(message, "KEY:(.+):(%d+)")
-					local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))			
+					local _,_, playerName,server = string.find(sender, "(%a+)-(%a+)")
+					local senderName = playerName.." "..server
+					local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(senderName)			
                     if dungeonName and level then
                         playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(ratingSummary.currentSeasonScore)}
                         UpdateKeyList(KRFrame.keyList.content)
