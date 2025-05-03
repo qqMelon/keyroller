@@ -92,11 +92,11 @@ end
 local function GetColorForScore(score)
 	if score >= 3500 then
 		return "|cffff8000" -- orange
-    elseif score < 3500 then
+    elseif score >= 3000 and score < 3500 then
         return "|cffff00ff" -- pink
-    elseif score < 3000 then
+    elseif score >= 2500 and score < 3000 then
         return "|cffa335ee" -- purple
-    elseif score < 2500 then
+    elseif score >= 2000 and < 2500 then
         return "|cff0070dd" -- blue
     elseif score >= 1000 and score < 2000 then
         return "|cff1eff00" -- green
