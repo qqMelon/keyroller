@@ -65,7 +65,9 @@ end
 local function BroadcastKey()
     local dungeonName, level = GetPlayerMythicKey()
     if dungeonName and level then
-        local message = string.format("%s:%d", dungeonName, level)
+		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
+		local score = ratingSummary.currentSeasonScore
+        local message = string.format("%s:%d:%d", dungeonName, level, score)
 		
         if IsInGroup() then
             C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
@@ -533,12 +535,9 @@ frame:SetScript(
             local prefix, message, channel, sender = ...
             if prefix == ADDON_PREFIX then
                 if string.find(message, "^KEY:") then
-                    local _, _, dungeonName, level = string.find(message, "KEY:(.+):(%d+)")
-					local _,_, playerName,server = string.find(sender, "(%a+)-(%a+)")
-					local senderName = playerName.." "..server
-					local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(senderName)			
+                    local _, _, dungeonName, level, score = string.find(message, "KEY:(.+):(%d+):(%d+)")	
                     if dungeonName and level then
-                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(ratingSummary.currentSeasonScore)}
+                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
                 elseif string.find(message, "VERSION_PAYLOAD:") then
