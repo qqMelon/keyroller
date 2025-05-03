@@ -17,12 +17,9 @@ local refreshLock = false
 local refreshLockKey = false
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
-frame:RegisterEvent("BAG_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
 frame:RegisterEvent("PARTY_LEADER_CHANGED")
-frame:RegisterEvent("GROUP_JOINED")
-frame:RegisterEvent("GROUP_LEFT")
 
 local ADDON_PREFIX = "KR"
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
@@ -68,7 +65,9 @@ end
 local function BroadcastKey()
     local dungeonName, level = GetPlayerMythicKey()
     if dungeonName and level then
-        local message = string.format("%s:%d", dungeonName, level)
+		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
+		local score = ratingSummary.currentSeasonScore
+        local message = string.format("%s:%d:%d", dungeonName, level, score)
 		
         if IsInGroup() then
             C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
@@ -88,6 +87,22 @@ local function GetColorForLevel(level)
     else
         return "|cff1eff00" -- green
     end
+end
+
+local function GetColorForScore(score)
+	if score >= 3500 then
+		return "|cffff8000" -- orange
+    elseif score >= 3000 and score < 3500 then
+        return "|cffff00ff" -- pink
+    elseif score >= 2500 and score < 3000 then
+        return "|cffa335ee" -- purple
+    elseif score >= 2000 and score < 2500 then
+        return "|cff0070dd" -- blue
+    elseif score >= 1000 and score < 2000 then
+        return "|cff1eff00" -- green
+    else
+		return "|cffffffff" -- white
+	end
 end
 
 local function StartRoll()
@@ -202,24 +217,6 @@ local function DisplayPopUpLeadPromote(winner)
     return
 end
 
-local f = CreateFrame("Frame")
-f:RegisterEvent("CHAT_MSG_ADDON")
-f:RegisterEvent("GROUP_ROSTER_UPDATE")
-f:RegisterEvent("GROUP_LEFT")
-f:RegisterEvent("GROUP_JOINED")
-f:RegisterEvent("BAG_UPDATE")
-f:RegisterEvent("CHAT_MSG_ADDON")
-f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
-    if event == "CHAT_MSG_ADDON" and prefix == "KR" and string.find(message, "VERSION_PAYLOAD:") then
-		--if UnitIsGroupLeader(UnitName("player")) then
-			local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(%a+):(%A+)")
-			--table.insert.insert(versionList,{player, version})
-			versionList[player] = version
-		--end
-		
-    end
-end)
-
 local function CreateVersionFrame ()
 	--creation of the version frame
     local f = CreateFrame("Frame", "VersFrame", UIParent, "BackdropTemplate")
@@ -311,8 +308,9 @@ local function UpdateKeyList(content)
     end
 
     local totalWidth = content:GetWidth()
-    local nameWidth = totalWidth * 0.33
-    local levelWidth = totalWidth * 0.17
+    local nameWidth = totalWidth * 0.31
+	local scoreWidth = totalWidth * 0.4
+    local levelWidth = totalWidth * 0.15
     local dungeonWidth = totalWidth * 0.5
 
     local rowHeight = 24
@@ -328,6 +326,10 @@ local function UpdateKeyList(content)
     local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h1:SetPoint("LEFT", 5, 0)
     h1:SetText("Player")
+	
+	local h4 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    h4:SetPoint("LEFT", 125, 0)
+    h4:SetText("RIO Score")
 
     local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h2:SetPoint("CENTER", header, "CENTER", 0, 0)
@@ -362,6 +364,13 @@ local function UpdateKeyList(content)
             nameText:SetWidth(nameWidth)
             nameText:SetJustifyH("LEFT")
             nameText:SetText(string.gsub(player, "-.*", ""))
+			
+			local scoreText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			local colorScore = GetColorForScore(key.score)
+            scoreText:SetPoint("LEFT", 140, 0)
+            scoreText:SetWidth(scoreWidth)
+            scoreText:SetJustifyH("LEFT")
+            scoreText:SetText(colorScore .. key.score .. "|r")
 
             local levelText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             local color = GetColorForLevel(key.level)
@@ -526,12 +535,15 @@ frame:SetScript(
             local prefix, message, channel, sender = ...
             if prefix == ADDON_PREFIX then
                 if string.find(message, "^KEY:") then
-                    local _, _, dungeonName, level = string.find(message, "KEY:(.+):(%d+)")
+                    local _, _, dungeonName, level, score = string.find(message, "KEY:(.+):(%d+):(%d+)")	
                     if dungeonName and level then
-                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level)}
+                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
-                elseif message == "ROLL" and sender ~= UnitName("player") then
+                elseif string.find(message, "VERSION_PAYLOAD:") then
+					local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(%a+):(%A+)")
+					versionList[player] = version
+				elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
                 elseif message == "PROMOTE_LEADER" then
 					DisplayPopupCreation(winner)
