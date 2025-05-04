@@ -541,7 +541,7 @@ frame:SetScript(
                         UpdateKeyList(KRFrame.keyList.content)
                     end
                 elseif string.find(message, "VERSION_PAYLOAD:") then
-					local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(%a+):(%A+)")
+					local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(.+):(%A+)")
 					versionList[player] = version
 				elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
@@ -585,6 +585,7 @@ frame:SetScript(
                         if matchedRoll > highestRoll then
                             highestRoll = matchedRoll
                             winner = matchedPlayer
+							print(winner)
                         end
                     end
 
@@ -597,7 +598,7 @@ frame:SetScript(
                     end
                 end
             end
-		    end
+		end
     end
 )
 
