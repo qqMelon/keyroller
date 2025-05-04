@@ -585,7 +585,6 @@ frame:SetScript(
                         if matchedRoll > highestRoll then
                             highestRoll = matchedRoll
                             winner = matchedPlayer
-							print(winner)
                         end
                     end
 
