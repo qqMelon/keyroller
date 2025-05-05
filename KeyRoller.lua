@@ -15,6 +15,7 @@ local isVersFont = false
 local versFont = nil
 local refreshLock = false
 local refreshLockKey = false
+local refreshLockRoll = false
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -24,6 +25,16 @@ frame:RegisterEvent("PARTY_LEADER_CHANGED")
 local ADDON_PREFIX = "KR"
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
 
+local function ExtractResilientValue(itemLink)
+	local itemString = select(3, strfind(itemLink, "|H(.+)|h"))
+	local resilient = (string.match(itemString, "(.-)%[")):sub(-4)
+	resilient = string.sub(resilient, 1,2)
+		if resilient == ":0" then
+			resilient = "0"
+		end
+	return resilient
+end
+
 local function GetPlayerMythicKey()
     for bag = 0, 4 do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
@@ -32,13 +43,14 @@ local function GetPlayerMythicKey()
                 local itemID = itemInfo.itemID
                 if itemID == 180653 then -- Keystone ID
                     local itemLink = itemInfo.hyperlink
+					local resilient = ExtractResilientValue(itemLink)
                     if itemLink then
                         local keyLevel = C_MythicPlus.GetOwnedKeystoneLevel()
                         local dungeonID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
                         if keyLevel and dungeonID then
                             local dungeonName = C_ChallengeMode.GetMapUIInfo(dungeonID)
                             if dungeonName and keyLevel > 0 then
-                                return dungeonName, keyLevel
+                                return dungeonName, keyLevel, resilient
                             end
                         end
                     end
@@ -46,7 +58,7 @@ local function GetPlayerMythicKey()
             end
         end
     end
-    return nil, nil
+    return nil, nil, nil
 end
 
 local function GetGroupType()
@@ -63,11 +75,11 @@ local function ClearingDatas ()
 end
 
 local function BroadcastKey()
-    local dungeonName, level = GetPlayerMythicKey()
+    local dungeonName, level, resilient = GetPlayerMythicKey()
     if dungeonName and level then
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
-        local message = string.format("%s:%d:%d", dungeonName, level, score)
+        local message = string.format("%s:%d:%d:%d", dungeonName, level, score, resilient)
 		
         if IsInGroup() then
             C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
@@ -151,7 +163,6 @@ local function CreateMythicGroup()
 end
 
 local function DisplayPopupCreation(winner)
-	
     if GetNumGroupMembers() < 5 then
         if UnitIsGroupLeader(UnitName("player")) then
 			StaticPopupDialogs["CREATION_CONFIRMATION"] = {
@@ -160,13 +171,18 @@ local function DisplayPopupCreation(winner)
 			button2 = "No",
 			OnAccept = function()
 				CreateMythicGroup()
+				refreshLockRoll = false
+			end,
+			OnCancel = function()
+				refreshLockRoll = false
 			end,
 			timeout = 0,
 			whileDead = true,
 			hideOnEscape = true,
 			preferredIndex = 3,
 			}
-    
+			
+			refreshLockRoll = true
 			StaticPopup_Show ("CREATION_CONFIRMATION")
         end
     end
@@ -180,6 +196,7 @@ local function DisplayPopUpLeadTransfer(winner)
             text = "TRANSFERING GROUP LEADERSHIP",
             OnCancel = function()
 				FirePromotionEvent(winner)
+				refreshLockRoll = false
             end,
 			sound = levelup2,
             timeout = 2,
@@ -205,6 +222,9 @@ local function DisplayPopUpLeadPromote(winner)
 				PromoteToLeader(winner)
 				DisplayPopUpLeadTransfer(winner)
             end,
+			OnCancel = function()
+				refreshLockRoll = false
+			end,
             timeout = 0,
             whileDead = true,
             hideOnEscape = true,
@@ -310,7 +330,8 @@ local function UpdateKeyList(content)
     local totalWidth = content:GetWidth()
     local nameWidth = totalWidth * 0.31
 	local scoreWidth = totalWidth * 0.4
-    local levelWidth = totalWidth * 0.15
+    local levelWidth = totalWidth * 0.11
+	local resilientWidth = totalWidth * 0.4
     local dungeonWidth = totalWidth * 0.5
 
     local rowHeight = 24
@@ -334,6 +355,10 @@ local function UpdateKeyList(content)
     local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h2:SetPoint("CENTER", header, "CENTER", 0, 0)
     h2:SetText("Level")
+	
+	local h5 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    h5:SetPoint("CENTER", header, "CENTER", 65, 0)
+    h5:SetText("Resilient")
 
     local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h3:SetPoint("RIGHT", -5, 0)
@@ -377,6 +402,14 @@ local function UpdateKeyList(content)
             levelText:SetPoint("CENTER", row, "CENTER", 0, 0)
             levelText:SetText(color .. "+" .. key.level .. "|r")
             levelText:SetJustifyH("CENTER")
+			
+			local resiText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local color = GetColorForLevel(key.resilient)
+            resiText:SetPoint("CENTER", row, "CENTER", 65, 0)
+			if key.resilient ~= 0 then
+				resiText:SetText(color .. key.resilient .. "|r")
+			end
+            resiText:SetJustifyH("CENTER")
 
             local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             dungeonText:SetPoint("RIGHT", -5, 0)
@@ -420,7 +453,10 @@ local function CreateMainFrame()
     f.rollButton:SetScript(
         "OnClick",
         function()
-            StartRoll()
+			if not refreshLockRoll then
+				refreshLockRoll = true
+				StartRoll()
+			end
         end
     )
 	f.rollButton:SetScript(
@@ -535,9 +571,9 @@ frame:SetScript(
             local prefix, message, channel, sender = ...
             if prefix == ADDON_PREFIX then
                 if string.find(message, "^KEY:") then
-                    local _, _, dungeonName, level, score = string.find(message, "KEY:(.+):(%d+):(%d+)")	
+                    local _, _, dungeonName, level, score, resilient = string.find(message, "KEY:(.+):(%d+):(%d+):(%d+)")	
                     if dungeonName and level then
-                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score)}
+                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
                 elseif string.find(message, "VERSION_PAYLOAD:") then
