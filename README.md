@@ -10,10 +10,14 @@
 
 ## Features
 
+|| Only the party leader can roll and refresh the list but it's efficient for all party member
+
 * List mythic keystones in your party
-* Export in chat mythic keystones available
+* List member **KeyRoller** addon version
 * Roll to chose where your party go
+* Give to roll winner the lead 
+* **KeyRoller** suggest to list the key
 
 ## Start
 
-To start use **KeyRoller** addon, you can run `/kr` into chat to show all available commands
+To start use **KeyRoller** addon, you can run `/kr` into chat !
