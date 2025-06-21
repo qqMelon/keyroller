@@ -10,7 +10,7 @@ addonTable.dungListFR = {
 [3] = "La colonie",
 [4] = "Théâtre de la Souffrance",
 [5] = "Le Filon",
-[6] = "Opération Mécagone: Workshop",
+[6] = "Opération Mécagone - L’atelier",
 [7] = "Opération Vannes ouvertes",
 [8] = "Hydromellerie de Brassecendre"
 }
