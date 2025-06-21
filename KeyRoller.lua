@@ -1,5 +1,5 @@
 -- KeyRoller.lua
-local addonName, addon = ...
+local addonName, addonTable = ...
 local frame = CreateFrame("Frame")
 
 local playerKeys = {}
@@ -318,6 +318,33 @@ local function DisplayPopUpRefreshDataKey()
     StaticPopup_Show ("GATHERING_DATAS_KEY")
 end
 
+--- Manage locale for i18n (frFR and enUS(default) supported) ---
+local function ManageDungNameByLocale(dungName)
+	local playerLocale = GetLocale()
+	local dungListKey = nil
+	
+	for k,v in pairs (addonTable.dungListFR) do
+		if dungName == addonTable.dungListFR[k] then
+			dungListKey = k
+			break
+		end
+	end
+
+	for k,v in pairs (addonTable.dungListEN) do
+		if dungName == addonTable.dungListEN[k] then
+			dungListKey = k
+			break
+		end
+	end
+	
+	if playerLocale == addonTable.constFRLocale then
+		return addonTable.dungListFR[dungListKey]
+	else 
+		return addonTable.dungListEN[dungListKey]
+	end
+end
+
+
 local function UpdateKeyList(content)
     if not content then return end
 
@@ -413,7 +440,7 @@ local function UpdateKeyList(content)
 
             local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             dungeonText:SetPoint("RIGHT", -5, 0)
-            dungeonText:SetText(key.dungeon or "?")
+            dungeonText:SetText(ManageDungNameByLocale(key.dungeon))
             dungeonText:SetJustifyH("RIGHT")
         end
     end
