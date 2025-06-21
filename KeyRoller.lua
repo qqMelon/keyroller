@@ -13,9 +13,10 @@ local versionList = {}
 local versTxt = ""
 local isVersFont = false
 local versFont = nil
+local refreshLock = false
+local refreshLockKey = false
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
-frame:RegisterEvent("BAG_UPDATE")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
 frame:RegisterEvent("PARTY_LEADER_CHANGED")
@@ -52,25 +53,28 @@ local function GetGroupType()
     return IsInRaid() and "RAID" or "PARTY"
 end
 
+local function ClearingDatas ()
+		if UnitIsGroupLeader(UnitName("player")) then
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", GetGroupType())
+		elseif not IsInGroup() then 
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", "WHISPER", UnitName("player"))
+		end
+	return
+end
+
 local function BroadcastKey()
     local dungeonName, level = GetPlayerMythicKey()
     if dungeonName and level then
-        local message = string.format("%s:%d", dungeonName, level)
+		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
+		local score = ratingSummary.currentSeasonScore
+        local message = string.format("%s:%d:%d", dungeonName, level, score)
+		
         if IsInGroup() then
             C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
-        end
+        else 
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", UnitName("player"))
+		end
     end
-end
-
-local function RequestKeys()
-    if not IsInGroup() then
-        print("You have to be in a group to ask for the keys")
-        return
-    end
-
-    playerKeys = {}
-    BroadcastKey() -- Send key
-    C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "REQUEST_KEY", GetGroupType()) -- Call Keys
 end
 
 local function GetColorForLevel(level)
@@ -83,6 +87,22 @@ local function GetColorForLevel(level)
     else
         return "|cff1eff00" -- green
     end
+end
+
+local function GetColorForScore(score)
+	if score >= 3500 then
+		return "|cffff8000" -- orange
+    elseif score >= 3000 and score < 3500 then
+        return "|cffff00ff" -- pink
+    elseif score >= 2500 and score < 3000 then
+        return "|cffa335ee" -- purple
+    elseif score >= 2000 and score < 2500 then
+        return "|cff0070dd" -- blue
+    elseif score >= 1000 and score < 2000 then
+        return "|cff1eff00" -- green
+    else
+		return "|cffffffff" -- white
+	end
 end
 
 local function StartRoll()
@@ -197,43 +217,7 @@ local function DisplayPopUpLeadPromote(winner)
     return
 end
 
-local f = CreateFrame("Frame")
-f:RegisterEvent("CHAT_MSG_ADDON")
-f:SetScript("OnShow", function()
-    if IsInGroup() then
-        SendOwnKey()
-    end
-end)
-
-f:RegisterEvent("GROUP_ROSTER_UPDATE")
-f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
-    if event == "CHAT_MSG_ADDON" and prefix == "KR" then
-        -- Decode and save received key
-        local name, level, dungeon = strsplit(":", message)
-        name, level, dungeon = name or "?", tonumber(level), dungeon or "?"
-        if name and level and dungeon then
-            keyList[name] = { level = level, dungeon = dungeon }
-            if mainFrame and mainFrame.keyList then
-                UpdateKeyList(mainFrame.keyList.content)
-            end
-        end
-    end
-end)
-
-f:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
-    if event == "CHAT_MSG_ADDON" and prefix == "KR" and string.find(message, "VERSION_PAYLOAD:") then
-		--if UnitIsGroupLeader(UnitName("player")) then
-			local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(%a+):(%A+)")
-			--table.insert.insert(versionList,{player, version})
-			versionList[player] = version
-		--end
-		
-    end
-end)
-
 local function CreateVersionFrame ()
-	--retrieveing data
-	GetPlayerAddonVersion ()
 	--creation of the version frame
     local f = CreateFrame("Frame", "VersFrame", UIParent, "BackdropTemplate")
 	    f:SetBackdrop({
@@ -242,16 +226,22 @@ local function CreateVersionFrame ()
         edgeSize = 12,
         insets = { left = 3, right = 1, top = 3, bottom = 3 }
     })
-    f:SetSize(180, 80)
+    f:SetSize(180, 72)
 	f:SetPoint("BOTTOMRIGHT", "KRFrame", 178,0)
 	    f:SetBackdropColor(0, 0, 0, 0.8)
-    f:SetMovable(true)
-    f:EnableMouse(true)
+    f:SetMovable(false)
+    f:EnableMouse(false)
     f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	f:Hide()
+	f:SetScript("OnHide", function()
+		versFont:SetText("")
+		refreshLock = false
+	end
+	)
 
+	tinsert(UISpecialFrames, "VersFrame")
 	return f
 end
 
@@ -262,33 +252,50 @@ local function DisplayVersionFrame()
         versFont:SetJustifyH("LEFT")
         versFont:SetJustifyV("TOP")
 
-        local text = ""
-        for p, v in pairs(versionList) do
-            text = text .. "v. " .. v .. "   " .. p .. "\n"
-        end
-        versTxt = text
-
         isVersFont = true
     end
-
-    if VersFrame then
-        if VersFrame:IsShown() then
-            VersFrame:Hide()
-            versFont:SetText("")
-        else
-            versFont:SetText(versTxt)
-            VersFrame:Show()
-        end
+	
+	local text = ""
+    for p, v in pairs(versionList) do
+        text = text .. "v. " .. v .. "   " .. p .. "\n"
     end
+    versTxt = text
+
+    versFont:SetText(versTxt)
+    VersFrame:Show()
+
 end
 
-local function findGroupLeader()
-	for i = 1, GetNumGroupMembers() do
-		local name = GetRaidRosterInfo(i)
-		if UnitIsGroupLeader(UnitName(name)) then
-			return name
-		end
-	end
+local function DisplayPopUpRefreshData()
+    StaticPopupDialogs["GATHERING_DATAS"] = {
+    text = "GATHERING DATAS ...",
+	OnCancel = function ()
+		DisplayVersionFrame()
+	end,
+	sound = levelup2,
+    timeout = 2,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+    }
+			
+    StaticPopup_Show ("GATHERING_DATAS")
+end
+
+local function DisplayPopUpRefreshDataKey()
+    StaticPopupDialogs["GATHERING_DATAS_KEY"] = {
+    text = "GATHERING DATAS ...",
+	OnCancel = function ()
+		refreshLockKey = false
+	end,
+	sound = levelup2,
+    timeout = 2,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+    }
+			
+    StaticPopup_Show ("GATHERING_DATAS_KEY")
 end
 
 local function UpdateKeyList(content)
@@ -301,8 +308,9 @@ local function UpdateKeyList(content)
     end
 
     local totalWidth = content:GetWidth()
-    local nameWidth = totalWidth * 0.33
-    local levelWidth = totalWidth * 0.17
+    local nameWidth = totalWidth * 0.31
+	local scoreWidth = totalWidth * 0.4
+    local levelWidth = totalWidth * 0.15
     local dungeonWidth = totalWidth * 0.5
 
     local rowHeight = 24
@@ -318,6 +326,10 @@ local function UpdateKeyList(content)
     local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h1:SetPoint("LEFT", 5, 0)
     h1:SetText("Player")
+	
+	local h4 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    h4:SetPoint("LEFT", 125, 0)
+    h4:SetText("RIO Score")
 
     local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h2:SetPoint("CENTER", header, "CENTER", 0, 0)
@@ -325,7 +337,7 @@ local function UpdateKeyList(content)
 
     local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h3:SetPoint("RIGHT", -5, 0)
-    h3:SetText("Dongeon")
+    h3:SetText("Dungeon")
 
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
@@ -352,6 +364,13 @@ local function UpdateKeyList(content)
             nameText:SetWidth(nameWidth)
             nameText:SetJustifyH("LEFT")
             nameText:SetText(string.gsub(player, "-.*", ""))
+			
+			local scoreText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			local colorScore = GetColorForScore(key.score)
+            scoreText:SetPoint("LEFT", 140, 0)
+            scoreText:SetWidth(scoreWidth)
+            scoreText:SetJustifyH("LEFT")
+            scoreText:SetText(colorScore .. key.score .. "|r")
 
             local levelText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             local color = GetColorForLevel(key.level)
@@ -448,17 +467,62 @@ local function CreateMainFrame()
 
 
 	f.versButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-	f.versButton:RegisterEvent ("PARTY_LEADER_CHANGED")
     f.versButton:SetPoint("BOTTOMRIGHT", -5, 5)
     f.versButton:SetSize(65, 25)
     f.versButton:SetText("v. "..C_AddOns.GetAddOnMetadata("keyroller", "Version"))
 	f.versButton:SetScript(
         "OnClick",
         function()
-			--getting player's version data (storing in versList global variable)
-			DisplayVersionFrame()
-        end
-    )
+			if not refreshLock then
+				refreshLock = true
+				versionList = {}
+				--getting player's version data (storing in versList global variable)
+				GetPlayerAddonVersion ()
+				DisplayPopUpRefreshData()
+			end
+			
+			if VersFrame then
+				if VersFrame:IsShown() then
+					VersFrame:Hide()
+				end
+			end
+		end )
+		
+	f.refreshBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+	f.refreshBtn:RegisterEvent ("PARTY_LEADER_CHANGED")
+	f.refreshBtn:RegisterEvent("GROUP_ROSTER_UPDATE")
+    f.refreshBtn:SetPoint("BOTTOMLEFT", 5, 5)
+    f.refreshBtn:SetSize(65, 25)
+    f.refreshBtn:SetText("Refresh")
+	f.refreshBtn:SetScript(
+        "OnClick",
+        function()
+			if not refreshLockKey then
+				if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
+					refreshLockKey = true
+					ClearingDatas()
+					DisplayPopUpRefreshDataKey()
+				end
+			end
+		end )
+	f.refreshBtn:SetScript(
+		"OnEvent",
+		function()
+			if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
+				f.refreshBtn:Enable()
+			else
+				f.refreshBtn:Disable()
+			end
+		end
+	)
+	
+	if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
+		f.refreshBtn:Enable()
+	else
+		f.refreshBtn:Disable()
+	end
+	
+	tinsert(UISpecialFrames, "Frame")
 	
     return f
 end
@@ -471,14 +535,15 @@ frame:SetScript(
             local prefix, message, channel, sender = ...
             if prefix == ADDON_PREFIX then
                 if string.find(message, "^KEY:") then
-                    local _, _, dungeonName, level = string.find(message, "KEY:(.+):(%d+)")
+                    local _, _, dungeonName, level, score = string.find(message, "KEY:(.+):(%d+):(%d+)")	
                     if dungeonName and level then
-                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level)}
+                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
-                elseif message == "REQUEST_KEY" then
-                    BroadcastKey()
-                elseif message == "ROLL" and sender ~= UnitName("player") then
+                elseif string.find(message, "VERSION_PAYLOAD:") then
+					local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(%a+):(%A+)")
+					versionList[player] = version
+				elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
                 elseif message == "PROMOTE_LEADER" then
 					DisplayPopupCreation(winner)
@@ -491,6 +556,9 @@ frame:SetScript(
 					else 
 						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", UnitName("player"))
 					end
+				elseif message == "CLEARING_DATAS" then
+					playerKeys = {}
+					BroadcastKey()
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
@@ -533,11 +601,7 @@ frame:SetScript(
                     end
                 end
             end
-        elseif event == "BAG_UPDATE" then
-            BroadcastKey()
-        elseif event == "GROUP_ROSTER_UPDATE" then
-            BroadcastKey()
-		end
+		    end
     end
 )
 
