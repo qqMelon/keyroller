@@ -1,7 +1,7 @@
 -- KeyRoller.lua
 local addonName, addonTable = ...
 local frame = CreateFrame("Frame")
-
+local mainframe = nil
 local playerKeys = {}
 local isRollInProgress = false
 local rollResults = {}
@@ -16,6 +16,7 @@ local versFont = nil
 local refreshLock = false
 local refreshLockKey = false
 local refreshLockRoll = false
+local isResizeNeeded = false
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -322,6 +323,7 @@ end
 local function ManageDungNameByLocale(dungName)
 	local playerLocale = GetLocale()
 	local dungListKey = nil
+	local returnValue = nil
 	
 	for k,v in pairs (addonTable.dungListFR) do
 		if dungName == addonTable.dungListFR[k] then
@@ -337,13 +339,15 @@ local function ManageDungNameByLocale(dungName)
 		end
 	end
 	
+	
 	if playerLocale == addonTable.constFRLocale then
-		return addonTable.dungListFR[dungListKey]
+		returnValue = addonTable.dungListFR[dungListKey]
 	else 
-		return addonTable.dungListEN[dungListKey]
+		returnValue = addonTable.dungListEN[dungListKey]
 	end
+	
+	return returnValue
 end
-
 
 local function UpdateKeyList(content)
     if not content then return end
@@ -353,13 +357,22 @@ local function UpdateKeyList(content)
         child:Hide()
         child:SetParent(nil)
     end
-
+	
     local totalWidth = content:GetWidth()
-    local nameWidth = totalWidth * 0.31
-	local scoreWidth = totalWidth * 0.4
-    local levelWidth = totalWidth * 0.11
-	local resilientWidth = totalWidth * 0.4
-    local dungeonWidth = totalWidth * 0.5
+	if isResizeNeeded then
+		isResizeNeeded = false
+		mainFrame:SetWidth(mainFrame:GetWidth() - 10)
+	end
+
+	for player, key in pairs(playerKeys) do
+		local dungName = ManageDungNameByLocale(key.dungeon)
+		local lenValue = string.len(dungName)
+		if lenValue > 15 then
+			totalWidth = content:GetWidth() + 10
+			mainFrame:SetWidth(mainFrame:GetWidth() + 10)
+			isResizeNeeded = true
+		end
+	end
 
     local rowHeight = 24
     local spacing = 5
@@ -367,24 +380,27 @@ local function UpdateKeyList(content)
 
     -- Headers
     local header = CreateFrame("Frame", nil, content)
+	header.bg = header:CreateTexture(nil, "BACKGROUND")
+            header.bg:SetAllPoints()
+            header.bg:SetColorTexture(0.1, 0.1, 0.1, 0.6)
     header:SetPoint("TOPLEFT", 0, 0)
-    header:SetPoint("TOPRIGHT", 0, 0)
-    header:SetHeight(rowHeight)
+    --header:SetPoint("TOPRIGHT", 0, 0)
+	header:SetSize(totalWidth, rowHeight)
 
     local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     h1:SetPoint("LEFT", 5, 0)
     h1:SetText("Player")
 	
 	local h4 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    h4:SetPoint("LEFT", 125, 0)
+    h4:SetPoint("LEFT", 115, 0)
     h4:SetText("RIO Score")
 
     local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    h2:SetPoint("CENTER", header, "CENTER", 0, 0)
+    h2:SetPoint("CENTER", header, "CENTER", -38, 0)
     h2:SetText("Level")
 	
 	local h5 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    h5:SetPoint("CENTER", header, "CENTER", 65, 0)
+    h5:SetPoint("CENTER", header, "CENTER", 10, 0)
     h5:SetText("Resilient")
 
     local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -395,7 +411,7 @@ local function UpdateKeyList(content)
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
             rowIndex = rowIndex + 1
             local row = CreateFrame("Frame", nil, content)
-            row:SetSize(content:GetWidth(), rowHeight)
+            row:SetSize(totalWidth, rowHeight)
             row:SetHeight(rowHeight)
             row:SetPoint("TOPLEFT", 0, -(rowHeight + spacing) * rowIndex)
 
@@ -413,26 +429,26 @@ local function UpdateKeyList(content)
 
             local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             nameText:SetPoint("LEFT", 5, 0)
-            nameText:SetWidth(nameWidth)
+            --nameText:SetWidth(nameWidth)
             nameText:SetJustifyH("LEFT")
             nameText:SetText(string.gsub(player, "-.*", ""))
 			
 			local scoreText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 			local colorScore = GetColorForScore(key.score)
-            scoreText:SetPoint("LEFT", 140, 0)
-            scoreText:SetWidth(scoreWidth)
+            scoreText:SetPoint("LEFT", 130, 0)
+            --scoreText:SetWidth(scoreWidth)
             scoreText:SetJustifyH("LEFT")
             scoreText:SetText(colorScore .. key.score .. "|r")
 
             local levelText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             local color = GetColorForLevel(key.level)
-            levelText:SetPoint("CENTER", row, "CENTER", 0, 0)
+            levelText:SetPoint("CENTER", row, "CENTER", -40, 0)
             levelText:SetText(color .. "+" .. key.level .. "|r")
             levelText:SetJustifyH("CENTER")
 			
 			local resiText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             local color = GetColorForLevel(key.resilient)
-            resiText:SetPoint("CENTER", row, "CENTER", 65, 0)
+            resiText:SetPoint("CENTER", row, "CENTER", 10, 0)
 			if key.resilient ~= 0 then
 				resiText:SetText(color .. key.resilient .. "|r")
 			end
@@ -440,8 +456,10 @@ local function UpdateKeyList(content)
 
             local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             dungeonText:SetPoint("RIGHT", -5, 0)
-            dungeonText:SetText(ManageDungNameByLocale(key.dungeon))
+			local dungName = ManageDungNameByLocale(key.dungeon)
+            dungeonText:SetText(dungName)
             dungeonText:SetJustifyH("RIGHT")
+				
         end
     end
 
@@ -681,5 +699,5 @@ SlashCmdList["KR"] = function()
 end
 
 -- Initialisation
-local mainFrame = CreateMainFrame()
+mainFrame = CreateMainFrame()
 local versFrame = CreateVersionFrame()
