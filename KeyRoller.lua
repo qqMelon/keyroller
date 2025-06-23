@@ -17,6 +17,7 @@ local refreshLock = false
 local refreshLockKey = false
 local refreshLockRoll = false
 local isResizeNeeded = false
+local dungNameMaxSize = 0
 
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -351,7 +352,7 @@ end
 
 local function UpdateKeyList(content)
     if not content then return end
-
+	
     -- Clean children
     for _, child in ipairs({content:GetChildren()}) do
         child:Hide()
@@ -361,15 +362,17 @@ local function UpdateKeyList(content)
     local totalWidth = content:GetWidth()
 	if isResizeNeeded then
 		isResizeNeeded = false
-		mainFrame:SetWidth(mainFrame:GetWidth() - 10)
+		mainFrame:SetWidth(mainFrame:GetWidth() - (dungNameMaxSize - 20))
+		dungNameMaxSize = 0
 	end
 
 	for player, key in pairs(playerKeys) do
 		local dungName = ManageDungNameByLocale(key.dungeon)
 		local lenValue = string.len(dungName)
-		if lenValue > 15 then
-			totalWidth = content:GetWidth() + 10
-			mainFrame:SetWidth(mainFrame:GetWidth() + 10)
+		if lenValue >= 20 and lenValue > dungNameMaxSize then
+			dungNameMaxSize = lenValue
+			totalWidth = content:GetWidth() + (dungNameMaxSize - 20)
+			mainFrame:SetWidth(mainFrame:GetWidth() + (dungNameMaxSize - 20))
 			isResizeNeeded = true
 		end
 	end
@@ -380,9 +383,6 @@ local function UpdateKeyList(content)
 
     -- Headers
     local header = CreateFrame("Frame", nil, content)
-	header.bg = header:CreateTexture(nil, "BACKGROUND")
-            header.bg:SetAllPoints()
-            header.bg:SetColorTexture(0.1, 0.1, 0.1, 0.6)
     header:SetPoint("TOPLEFT", 0, 0)
     --header:SetPoint("TOPRIGHT", 0, 0)
 	header:SetSize(totalWidth, rowHeight)
