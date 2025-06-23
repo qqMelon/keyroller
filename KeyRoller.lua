@@ -360,21 +360,27 @@ local function UpdateKeyList(content)
     end
 	
     local totalWidth = content:GetWidth()
+	--resetting size if previous resizing
 	if isResizeNeeded then
 		isResizeNeeded = false
 		mainFrame:SetWidth(mainFrame:GetWidth() - (dungNameMaxSize - 20))
 		dungNameMaxSize = 0
 	end
 
+	--checking if resizing is needed
 	for player, key in pairs(playerKeys) do
 		local dungName = ManageDungNameByLocale(key.dungeon)
 		local lenValue = string.len(dungName)
 		if lenValue >= 20 and lenValue > dungNameMaxSize then
 			dungNameMaxSize = lenValue
-			totalWidth = content:GetWidth() + (dungNameMaxSize - 20)
-			mainFrame:SetWidth(mainFrame:GetWidth() + (dungNameMaxSize - 20))
 			isResizeNeeded = true
 		end
+	end
+	
+	--resizing
+	if dungNameMaxSize > 0 and isResizeNeeded then
+		totalWidth = content:GetWidth() + (dungNameMaxSize - 20)
+		mainFrame:SetWidth(mainFrame:GetWidth() + (dungNameMaxSize - 20))
 	end
 
     local rowHeight = 24
