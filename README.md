@@ -10,7 +10,7 @@
 
 ## Features
 
-|| Only the party leader can roll and refresh the list but it's efficient for all party member
+> Only the party leader can roll and refresh the list but it's efficient for all party member
 
 * List mythic keystones in your party
 * List member **KeyRoller** addon version
