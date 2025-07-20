@@ -71,7 +71,7 @@ local function GetGroupType()
     return IsInRaid() and "RAID" or "PARTY"
 end
 
-local function ClearingDatas (isGuildDatasReq)
+local function ClearingDatas ()
 
 		if isGuildDatasReq then
 			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS", "GUILD")
@@ -100,7 +100,7 @@ local function BroacastKeyGuild(sender)
 		local score = ratingSummary.currentSeasonScore
         local message = string.format("%s:%d:%d:%d", dungeonName, level, score, resilient)
 		
-		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD:" .. message, "WHISPER", sender)
+		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEYGUILD:" .. message, "WHISPER", sender)
 	end
 
 end
@@ -392,7 +392,7 @@ local function CreateScrollBar (state)
 		
 		-- scrollChild.bg = scrollChild:CreateTexture(nil, "BACKGROUND")
         --scrollChild.bg:SetAllPoints()
-		--scrollFrameTemp:Hide()
+		scrollFrameTemp:Hide()
 		
 		return scrollFrameTemp
 	elseif state == "hide" then
@@ -416,10 +416,7 @@ local function CreateInviteBtn(player, frame)
     invBtn:SetScript(
         "OnClick",
         function(self, event)
-			print("invite")
-			print(player)
-			print(UnitName("player"))
-			if UnitName("player") ~= player then
+			if string.gsub(UnitName("player"), "-.*", "") ~= string.gsub(player, "-.*", "") then
 				InviteUnit(player)
 			end
         end
@@ -428,14 +425,12 @@ local function CreateInviteBtn(player, frame)
 		"OnEvent",
         function(self, event)
 			if event == "PARTY_LEADER_CHANGED" then
-			print("party leader changed")
 				if UnitIsGroupLeader(UnitName("player")) then
 					invBtn:Enable()
 				end
 			end
 			
 			if event == "GROUP_ROSTER_UPDATE" then
-			print("group roaster changed")
 				if not IsInGroup(UnitName("player")) or UnitIsGroupLeader(UnitName("player")) then
 					invBtn:Enable()
 				end
@@ -504,7 +499,7 @@ local function UpdateKeyList(content)
 		CreateScrollBar("show")
 	end
 
-    local rowHeight = 20
+    local rowHeight = 26
     local spacing = 5
     local rowIndex = 0
 
@@ -798,8 +793,12 @@ frame:SetScript(
                         playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
-				elseif string.find(message, "^KEY_GUILD:") then
-					DispatchDatas(message)
+				elseif string.find(message, "^KEYGUILD:") then
+				local msg
+				local _,_, dungeonName, level, score, resilient = string.find(message, "KEYGUILD:(.+):(%d+):(%d+):(%d+)")
+				msg = string.format("%s:%d:%d:%d", dungeonName, level, score, resilient)
+
+					DispatchDatas(msg)
                 elseif string.find(message, "VERSION_PAYLOAD:") then
 					local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(.+):(%A+)")
 					versionList[player] = version
@@ -821,7 +820,6 @@ frame:SetScript(
 					BroadcastKey()
 				elseif message == "GUILD_DATAS" then
 					playerKeys = {}
-					scrollChild:SetText("")
 					BroacastKeyGuild(sender)
 				elseif message == "GUILD_DATAS_REQ_1" then
 					isGuildDatasReq = true
