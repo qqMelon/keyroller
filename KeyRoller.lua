@@ -98,9 +98,8 @@ local function BroacastKeyGuild(sender)
     if dungeonName and level then
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
-        local message = string.format("%s:%d:%d:%d", dungeonName, level, score, resilient)
-		
-		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEYGUILD:" .. message, "WHISPER", sender)
+        local message = string.format("%s:%d:%d:%d:%s", dungeonName, level, score, resilient, UnitName("player"))
+		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD:" .. message, "WHISPER", sender)
 	end
 
 end
@@ -793,12 +792,23 @@ frame:SetScript(
                         playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
-				elseif string.find(message, "^KEYGUILD:") then
-				local msg
-				local _,_, dungeonName, level, score, resilient = string.find(message, "KEYGUILD:(.+):(%d+):(%d+):(%d+)")
-				msg = string.format("%s:%d:%d:%d", dungeonName, level, score, resilient)
+				elseif string.find(message, "^KEY_GUILD_UPDATE:") then
+					local _,_, dungeonName, level, score, resilient, playerName = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+)")
+                    if dungeonName and level then
+                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
+                        UpdateKeyList(KRFrame.keyList.content)
+                    end
+				elseif string.find(message, "^KEY_GUILD:") then
+					local msg
+					local _,_, dungeonName, level, score, resilient, playerName = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+)")
+					msg = string.format("%s:%d:%d:%d:%s", dungeonName, level, score, resilient, playerName)
 
-					DispatchDatas(msg)
+					if IsInGroup() then
+						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD_UPDATE:" .. message, GetGroupType())
+					else 
+						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD_UPDATE:" .. message, "WHISPER", UnitName("player"))
+					end
+		
                 elseif string.find(message, "VERSION_PAYLOAD:") then
 					local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(.+):(%A+)")
 					versionList[player] = version
