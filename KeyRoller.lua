@@ -98,7 +98,7 @@ local function BroacastKeyGuild(sender)
     if dungeonName and level then
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
-        local message = string.format("%s:%d:%d:%d:%s", dungeonName, level, score, resilient, UnitName("player"))
+        local message = string.format("%s:%d:%d:%d:%s:%s", dungeonName, level, score, resilient, UnitNameUnmodified("player"), GetRealmName())
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD:" .. message, "WHISPER", sender)
 	end
 
@@ -401,8 +401,7 @@ local function CreateScrollBar (state)
 	end
 end
 
-local function CreateInviteBtn(player, frame)
-	
+local function CreateInviteBtn(player, realm, frame)
 	invBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	invBtn:RegisterEvent ("PARTY_LEADER_CHANGED")
 	invBtn:RegisterEvent ("GROUP_ROSTER_UPDATE")
@@ -416,7 +415,7 @@ local function CreateInviteBtn(player, frame)
         "OnClick",
         function(self, event)
 			if string.gsub(UnitName("player"), "-.*", "") ~= string.gsub(player, "-.*", "") then
-				InviteUnit(player)
+                C_PartyInfo.InviteUnit(player..'-'..realm)
 			end
         end
     )
@@ -535,7 +534,7 @@ local function UpdateKeyList(content)
 			local btn
 			if isGuildDatasReq then
 				row = CreateFrame("Frame", nil, scrollChild)
-				btn = CreateInviteBtn(player, row)
+				btn = CreateInviteBtn(player, key.realm, row)
 			else
 				row = CreateFrame("Frame", nil, content)
 			end
@@ -793,15 +792,15 @@ frame:SetScript(
                         UpdateKeyList(KRFrame.keyList.content)
                     end
 				elseif string.find(message, "^KEY_GUILD_UPDATE:") then
-					local _,_, dungeonName, level, score, resilient, playerName = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+)")
+					local _,_, dungeonName, level, score, resilient, playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+)")
                     if dungeonName and level then
-                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
+                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), realm = realm}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
 				elseif string.find(message, "^KEY_GUILD:") then
 					local msg
-					local _,_, dungeonName, level, score, resilient, playerName = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+)")
-					msg = string.format("%s:%d:%d:%d:%s", dungeonName, level, score, resilient, playerName)
+					local _,_, dungeonName, level, score, resilient, playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+)")
+					msg = string.format("%s:%d:%d:%d:%s:%s", dungeonName, level, score, resilient, playerName, realm)
 
 					if IsInGroup() then
 						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD_UPDATE:" .. message, GetGroupType())
