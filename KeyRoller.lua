@@ -425,12 +425,16 @@ local function CreateInviteBtn(player, realm, frame)
 			if event == "PARTY_LEADER_CHANGED" then
 				if UnitIsGroupLeader(UnitName("player")) then
 					invBtn:Enable()
+				else
+					invBtn:Disable()
 				end
 			end
 			
 			if event == "GROUP_ROSTER_UPDATE" then
 				if not IsInGroup(UnitName("player")) or UnitIsGroupLeader(UnitName("player")) then
 					invBtn:Enable()
+				else
+					invBtn:Disable()
 				end
 			end
         end
