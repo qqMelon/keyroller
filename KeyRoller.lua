@@ -357,6 +357,13 @@ local function ManageDungNameByLocale(dungName)
 		if dungName == addonTable.dungListFR[k] then
 			dungListKey = k
 			break
+		-- bypass fix for Tazavesh dung not matching references (frFR locale)
+		elseif dungName:find("^Tazavesh") and dungName:find("merveilles$") then
+			returnValue = "Tazavesh : les rues des merveilles"
+			return returnValue	
+		elseif dungName:find("^Tazavesh") and dungName:find("So’leah$") then
+			returnValue = "Tazavesh : le stratagème de So’leah"
+			return returnValue	
 		end
 	end
 
@@ -428,15 +435,15 @@ local function CreateInviteBtn(player, realm, frame)
 				else
 					invBtn:Disable()
 				end
-			end
-			
-			if event == "GROUP_ROSTER_UPDATE" then
+			elseif event == "GROUP_ROSTER_UPDATE" then
 				if not IsInGroup(UnitName("player")) or UnitIsGroupLeader(UnitName("player")) then
 					invBtn:Enable()
 				else
 					invBtn:Disable()
 				end
 			end
+			
+
         end
 	)
 	
