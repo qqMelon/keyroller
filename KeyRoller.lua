@@ -18,6 +18,7 @@ local refreshLockKey = false
 local refreshLockRoll = false
 local isResizeNeeded = false
 local dungNameMaxSize = 0
+
 local isGuildDatasReq = false
 local isScrollBar = false
 local scrollFrameTemp = nil
@@ -367,7 +368,6 @@ local function ManageDungNameByLocale(dungName)
 		end
 	end
 	
-	
 	if playerLocale == addonTable.constFRLocale then
 		returnValue = addonTable.dungListFR[dungListKey]
 	else 
@@ -376,6 +376,7 @@ local function ManageDungNameByLocale(dungName)
 	
 	return returnValue
 end
+
 
 local function CreateScrollBar (state)
 	if state == "create" then
@@ -446,23 +447,35 @@ local function CreateInviteBtn(player, realm, frame)
 	end
 
 	return invBtn
+
+	if playerLocale == addonTable.constFRLocale then
+		return addonTable.dungListFR[dungListKey]
+	else 
+		return addonTable.dungListEN[dungListKey]
+	end
+
 end
 
 local function UpdateKeyList(content)
     if not content then return end
 	
+
 	local guildDataLoaded = false
+
     -- Clean children
     for _, child in ipairs({content:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
 	
+
 	 for _, child in ipairs({scrollChild:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
 	
+
+
     local totalWidth = content:GetWidth()
 	--resetting size if previous resizing
 	if isResizeNeeded then
@@ -470,11 +483,29 @@ local function UpdateKeyList(content)
 		mainFrame:SetWidth(mainFrame:GetWidth() - (dungNameMaxSize - 20))
 		dungNameMaxSize = 0
 	end
+
 	
 	if isScrollBar then
 	mainFrame:SetWidth(mainFrame:GetWidth() - 20)
 	isScrollBar = false
 	CreateScrollBar("hide")
+
+
+	--checking if resizing is needed
+	for player, key in pairs(playerKeys) do
+		local dungName = ManageDungNameByLocale(key.dungeon)
+		local lenValue = string.len(dungName)
+		if lenValue >= 20 and lenValue > dungNameMaxSize then
+			dungNameMaxSize = lenValue
+			isResizeNeeded = true
+		end
+	end
+	
+	--resizing
+	if dungNameMaxSize > 0 and isResizeNeeded then
+		totalWidth = content:GetWidth() + (dungNameMaxSize - 20)
+		mainFrame:SetWidth(mainFrame:GetWidth() + (dungNameMaxSize - 20))
+
 	end
 
 	--checking if resizing is needed
@@ -534,6 +565,7 @@ local function UpdateKeyList(content)
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
             rowIndex = rowIndex + 1
+
 			local row
 			local btn
 			if isGuildDatasReq then
@@ -542,6 +574,9 @@ local function UpdateKeyList(content)
 			else
 				row = CreateFrame("Frame", nil, content)
 			end
+
+            local row = CreateFrame("Frame", nil, content)
+
             row:SetSize(totalWidth, rowHeight)
             row:SetHeight(rowHeight)
             row:SetPoint("TOPLEFT", 0, -(rowHeight + spacing) * rowIndex)
@@ -589,7 +624,11 @@ local function UpdateKeyList(content)
 
             local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             dungeonText:SetPoint("RIGHT", -5, 0)
+
 			local dungName = ManageDungNameByLocale(key.dungeon)
+
+			      local dungName = ManageDungNameByLocale(key.dungeon)
+
             dungeonText:SetText(dungName)
             dungeonText:SetJustifyH("RIGHT")
 				
@@ -898,5 +937,9 @@ end
 
 -- Initialisation
 mainFrame = CreateMainFrame()
+
 CreateVersionFrame()
 CreateScrollBar("create")
+
+local versFrame = CreateVersionFrame()
+
