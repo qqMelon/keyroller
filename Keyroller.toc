@@ -1,4 +1,4 @@
-## Interface: 110170
+## Interface: 110200
 ## Version: 1.6.0
 ## Title: Key Roller
 ## Notes: Gestionnaire de clefs mythiques avec système de roll
