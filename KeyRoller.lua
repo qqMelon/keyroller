@@ -19,6 +19,11 @@ local refreshLockRoll = false
 local isResizeNeeded = false
 local dungNameMaxSize = 0
 
+local isGuildDatasReq = false
+local isScrollBar = false
+local scrollFrameTemp = nil
+local scrollChild = nil
+
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
@@ -68,12 +73,36 @@ local function GetGroupType()
 end
 
 local function ClearingDatas ()
-		if UnitIsGroupLeader(UnitName("player")) then
-			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", GetGroupType())
-		elseif not IsInGroup() then 
-			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", "WHISPER", UnitName("player"))
+
+		if isGuildDatasReq then
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS", "GUILD")
+		else
+			if UnitIsGroupLeader(UnitName("player")) then
+				C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", GetGroupType())
+			elseif not IsInGroup() then 
+				C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", "WHISPER", UnitName("player"))
+			end
 		end
 	return
+end
+
+local function DispatchDatas(message)
+	    if IsInGroup() then
+            C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
+        else 
+			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", UnitName("player"))
+		end
+end
+
+local function BroacastKeyGuild(sender)
+	local dungeonName, level, resilient = GetPlayerMythicKey()
+    if dungeonName and level then
+		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
+		local score = ratingSummary.currentSeasonScore
+        local message = string.format("%s:%d:%d:%d:%s:%s", dungeonName, level, score, resilient, UnitNameUnmodified("player"), GetRealmName())
+		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD:" .. message, "WHISPER", sender)
+	end
+
 end
 
 local function BroadcastKey()
@@ -83,11 +112,7 @@ local function BroadcastKey()
 		local score = ratingSummary.currentSeasonScore
         local message = string.format("%s:%d:%d:%d", dungeonName, level, score, resilient)
 		
-        if IsInGroup() then
-            C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
-        else 
-			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", UnitName("player"))
-		end
+		DispatchDatas(message)
     end
 end
 
@@ -290,7 +315,7 @@ end
 
 local function DisplayPopUpRefreshData()
     StaticPopupDialogs["GATHERING_DATAS"] = {
-    text = "GATHERING DATAS ...",
+    text = "DISPLAYING PLAYERS ADDON-VERSION",
 	OnCancel = function ()
 		DisplayVersionFrame()
 	end,
@@ -304,11 +329,14 @@ local function DisplayPopUpRefreshData()
     StaticPopup_Show ("GATHERING_DATAS")
 end
 
-local function DisplayPopUpRefreshDataKey()
+local function DisplayPopUpRefreshDataKey(checkBox, refreshBtn, versBtn)
     StaticPopupDialogs["GATHERING_DATAS_KEY"] = {
     text = "GATHERING DATAS ...",
 	OnCancel = function ()
 		refreshLockKey = false
+		checkBox:Enable()
+		refreshBtn:Enable()
+		versBtn:Enable()
 	end,
 	sound = levelup2,
     timeout = 2,
@@ -349,22 +377,105 @@ local function ManageDungNameByLocale(dungName)
 	return returnValue
 end
 
+
+local function CreateScrollBar (state)
+	if state == "create" then
+		scrollFrameTemp = CreateFrame("ScrollFrame", nil, mainFrame, "UIPanelScrollFrameTemplate")
+		scrollFrameTemp:SetPoint("TOPLEFT", 10, -70)
+		scrollFrameTemp:SetPoint("BOTTOMRIGHT", -30, 35)
+
+		scrollChild = CreateFrame("ScrollFrame", "ScrollArea", scrollFrameTemp )
+		scrollFrameTemp:SetScrollChild(scrollChild)
+		scrollChild:EnableMouse(false)
+		scrollChild:SetWidth(500)
+		scrollChild:SetHeight(500) 
+		
+		-- scrollChild.bg = scrollChild:CreateTexture(nil, "BACKGROUND")
+        --scrollChild.bg:SetAllPoints()
+		scrollFrameTemp:Hide()
+		
+		return scrollFrameTemp
+	elseif state == "hide" then
+		scrollFrameTemp:Hide()
+	elseif state == "show" then
+		scrollFrameTemp:Show()
+	end
+end
+
+local function CreateInviteBtn(player, realm, frame)
+	invBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+	invBtn:RegisterEvent ("PARTY_LEADER_CHANGED")
+	invBtn:RegisterEvent ("GROUP_ROSTER_UPDATE")
+    invBtn:SetPoint("LEFT", 2, 0)
+    invBtn:SetSize(120, 21)
+	local text = invBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	text:SetText(string.gsub(player, "-.*", ""))
+	text:SetPoint("LEFT",5,0)
+
+    invBtn:SetScript(
+        "OnClick",
+        function(self, event)
+			if string.gsub(UnitName("player"), "-.*", "") ~= string.gsub(player, "-.*", "") then
+                C_PartyInfo.InviteUnit(player..'-'..realm)
+			end
+        end
+    )
+	invBtn:SetScript(
+		"OnEvent",
+        function(self, event)
+			if event == "PARTY_LEADER_CHANGED" then
+				if UnitIsGroupLeader(UnitName("player")) then
+					invBtn:Enable()
+				else
+					invBtn:Disable()
+				end
+			end
+			
+			if event == "GROUP_ROSTER_UPDATE" then
+				if not IsInGroup(UnitName("player")) or UnitIsGroupLeader(UnitName("player")) then
+					invBtn:Enable()
+				else
+					invBtn:Disable()
+				end
+			end
+        end
+	)
+	
+	invBtn:Disable()
+	if not IsInGroup(UnitName("player")) or UnitIsGroupLeader(UnitName("player")) then
+		invBtn:Enable()
+	end
+
+	return invBtn
+
 	if playerLocale == addonTable.constFRLocale then
 		return addonTable.dungListFR[dungListKey]
 	else 
 		return addonTable.dungListEN[dungListKey]
 	end
+
 end
 
 local function UpdateKeyList(content)
     if not content then return end
 	
+
+	local guildDataLoaded = false
+
     -- Clean children
     for _, child in ipairs({content:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
 	
+
+	 for _, child in ipairs({scrollChild:GetChildren()}) do
+        child:Hide()
+        child:SetParent(nil)
+    end
+	
+
+
     local totalWidth = content:GetWidth()
 	--resetting size if previous resizing
 	if isResizeNeeded then
@@ -372,6 +483,13 @@ local function UpdateKeyList(content)
 		mainFrame:SetWidth(mainFrame:GetWidth() - (dungNameMaxSize - 20))
 		dungNameMaxSize = 0
 	end
+
+	
+	if isScrollBar then
+	mainFrame:SetWidth(mainFrame:GetWidth() - 20)
+	isScrollBar = false
+	CreateScrollBar("hide")
+
 
 	--checking if resizing is needed
 	for player, key in pairs(playerKeys) do
@@ -387,9 +505,34 @@ local function UpdateKeyList(content)
 	if dungNameMaxSize > 0 and isResizeNeeded then
 		totalWidth = content:GetWidth() + (dungNameMaxSize - 20)
 		mainFrame:SetWidth(mainFrame:GetWidth() + (dungNameMaxSize - 20))
+
 	end
 
-    local rowHeight = 24
+	--checking if resizing is needed
+	for player, key in pairs(playerKeys) do
+		local dungName = ManageDungNameByLocale(key.dungeon)
+		local lenValue = string.len(dungName)
+		if lenValue >= 20 and lenValue > dungNameMaxSize then
+			dungNameMaxSize = lenValue
+			isResizeNeeded = true
+		end
+	end
+	
+	
+	
+	--resizing
+	if dungNameMaxSize > 0 and isResizeNeeded then
+		totalWidth = content:GetWidth() + (dungNameMaxSize - 20)
+		mainFrame:SetWidth(mainFrame:GetWidth() + (dungNameMaxSize - 20))
+	end
+	
+	if isGuildDatasReq then
+		isScrollBar = true
+		mainFrame:SetWidth(mainFrame:GetWidth() +20)
+		CreateScrollBar("show")
+	end
+
+    local rowHeight = 26
     local spacing = 5
     local rowIndex = 0
 
@@ -422,7 +565,18 @@ local function UpdateKeyList(content)
     for player, key in pairs(playerKeys) do
         if key.level >= minKeyLevel and key.level <= maxKeyLevel then
             rowIndex = rowIndex + 1
+
+			local row
+			local btn
+			if isGuildDatasReq then
+				row = CreateFrame("Frame", nil, scrollChild)
+				btn = CreateInviteBtn(player, key.realm, row)
+			else
+				row = CreateFrame("Frame", nil, content)
+			end
+
             local row = CreateFrame("Frame", nil, content)
+
             row:SetSize(totalWidth, rowHeight)
             row:SetHeight(rowHeight)
             row:SetPoint("TOPLEFT", 0, -(rowHeight + spacing) * rowIndex)
@@ -438,6 +592,8 @@ local function UpdateKeyList(content)
             row:SetScript("OnLeave", function()
                 row.bg:SetColorTexture(0.1, 0.1, 0.1, 0.6)
             end)
+			
+			
 
             local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             nameText:SetPoint("LEFT", 5, 0)
@@ -468,9 +624,14 @@ local function UpdateKeyList(content)
 
             local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             dungeonText:SetPoint("RIGHT", -5, 0)
+
+			local dungName = ManageDungNameByLocale(key.dungeon)
+
 			      local dungName = ManageDungNameByLocale(key.dungeon)
+
             dungeonText:SetText(dungName)
             dungeonText:SetJustifyH("RIGHT")
+				
         end
     end
 
@@ -592,8 +753,11 @@ local function CreateMainFrame()
 			if not refreshLockKey then
 				if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
 					refreshLockKey = true
+					f.checkBox:Disable()
+					f.refreshBtn:Disable()
+					f.versButton:Disable()
 					ClearingDatas()
-					DisplayPopUpRefreshDataKey()
+					DisplayPopUpRefreshDataKey(f.checkBox, f.refreshBtn, f.versButton)
 				end
 			end
 		end )
@@ -606,7 +770,7 @@ local function CreateMainFrame()
 				f.refreshBtn:Disable()
 			end
 		end
-	)
+		)
 	
 	if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
 		f.refreshBtn:Enable()
@@ -614,6 +778,44 @@ local function CreateMainFrame()
 		f.refreshBtn:Disable()
 	end
 	
+	f.checkBox = CreateFrame("CheckButton", "nil", f, "ChatConfigCheckButtonTemplate")
+	f.checkBox:RegisterEvent ("PARTY_LEADER_CHANGED")
+	f.checkBox:SetPoint("BOTTOMLEFT", 70, -1)
+	f.checkBox:SetSize(35, 35)
+	f.checkBox.tooltip = "Switch to guild datas with invite button ? (online members only)"
+	f.checkBox:SetScript("OnClick", 
+		function()
+			if f.checkBox:GetChecked() then
+				if IsInGroup() then
+					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS_REQ_1", GetGroupType())
+				else 
+					isGuildDatasReq = true
+				end
+			else 
+				if IsInGroup() then
+					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS_REQ_2", GetGroupType())
+				else 
+					isGuildDatasReq = false
+				end
+			end
+		end
+	)
+	f.checkBox:SetScript("OnEvent",
+		function()
+			if UnitIsGroupLeader(UnitName("player")) or not IsInGroup(UnitName("player")) then
+				C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS_REQ_2", GetGroupType())
+				f.checkBox:SetChecked(false)
+				f.checkBox:Show()
+			else
+				f.checkBox:Hide()
+			end
+		end
+	)
+	if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
+		f.checkBox:Show()
+	else
+		f.checkBox:Hide()
+	end
 	tinsert(UISpecialFrames, "Frame")
 	
     return f
@@ -632,6 +834,23 @@ frame:SetScript(
                         playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
                         UpdateKeyList(KRFrame.keyList.content)
                     end
+				elseif string.find(message, "^KEY_GUILD_UPDATE:") then
+					local _,_, dungeonName, level, score, resilient, playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+)")
+                    if dungeonName and level then
+                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), realm = realm}
+                        UpdateKeyList(KRFrame.keyList.content)
+                    end
+				elseif string.find(message, "^KEY_GUILD:") then
+					local msg
+					local _,_, dungeonName, level, score, resilient, playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+)")
+					msg = string.format("%s:%d:%d:%d:%s:%s", dungeonName, level, score, resilient, playerName, realm)
+
+					if IsInGroup() then
+						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD_UPDATE:" .. message, GetGroupType())
+					else 
+						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD_UPDATE:" .. message, "WHISPER", UnitName("player"))
+					end
+		
                 elseif string.find(message, "VERSION_PAYLOAD:") then
 					local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(.+):(%A+)")
 					versionList[player] = version
@@ -651,6 +870,13 @@ frame:SetScript(
 				elseif message == "CLEARING_DATAS" then
 					playerKeys = {}
 					BroadcastKey()
+				elseif message == "GUILD_DATAS" then
+					playerKeys = {}
+					BroacastKeyGuild(sender)
+				elseif message == "GUILD_DATAS_REQ_1" then
+					isGuildDatasReq = true
+				elseif message == "GUILD_DATAS_REQ_2" then
+					isGuildDatasReq = false
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
@@ -711,4 +937,9 @@ end
 
 -- Initialisation
 mainFrame = CreateMainFrame()
+
+CreateVersionFrame()
+CreateScrollBar("create")
+
 local versFrame = CreateVersionFrame()
+
