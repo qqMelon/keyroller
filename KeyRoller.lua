@@ -340,7 +340,6 @@ local function ManageDungNameByLocale(dungName)
 		end
 	end
 	
-	
 	if playerLocale == addonTable.constFRLocale then
 		returnValue = addonTable.dungListFR[dungListKey]
 	else 
@@ -348,6 +347,13 @@ local function ManageDungNameByLocale(dungName)
 	end
 	
 	return returnValue
+end
+
+	if playerLocale == addonTable.constFRLocale then
+		return addonTable.dungListFR[dungListKey]
+	else 
+		return addonTable.dungListEN[dungListKey]
+	end
 end
 
 local function UpdateKeyList(content)
@@ -462,10 +468,9 @@ local function UpdateKeyList(content)
 
             local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             dungeonText:SetPoint("RIGHT", -5, 0)
-			local dungName = ManageDungNameByLocale(key.dungeon)
+			      local dungName = ManageDungNameByLocale(key.dungeon)
             dungeonText:SetText(dungName)
             dungeonText:SetJustifyH("RIGHT")
-				
         end
     end
 
