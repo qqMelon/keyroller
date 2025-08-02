@@ -728,6 +728,7 @@ local function CreateMainFrame()
 	
 	f.checkBox = CreateFrame("CheckButton", "nil", f, "ChatConfigCheckButtonTemplate")
 	f.checkBox:RegisterEvent ("PARTY_LEADER_CHANGED")
+	f.checkBox:RegisterEvent ("GROUP_ROSTER_UPDATE")
 	f.checkBox:SetPoint("BOTTOMLEFT", 70, -1)
 	f.checkBox:SetSize(35, 35)
 	f.checkBox.tooltip = "Switch to guild datas with invite button ? (online members only)"
