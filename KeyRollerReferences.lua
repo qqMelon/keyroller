@@ -31,6 +31,7 @@ addonTable.dungListEN = {
 [5] = "The MOTHERLODE!!",
 [6] = "Operation: Mechagon - Workshop",
 [7] = "Operation: Floodgate",
+
 [8] = "Cinderbrew Meadery",
 [9] = "The Dawnbreaker",
 [10] = "Ara-Kara, City of Echoes",
