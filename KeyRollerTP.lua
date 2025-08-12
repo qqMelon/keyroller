@@ -9,7 +9,17 @@ local dungTPSpells = {
 	[2441] = 367416, -- tazavesh
 	[2662] = 445414, -- dawnbreaker
 	[2649] = 445444, -- priory
-	[2773] = 1216786, -- floodgate
+	[2773] = 1216786,-- floodgate
+}
+
+local dungTPName = {
+	[2830] = "Aldani",
+	[2287] = "HOA",
+	[2660] = "Ara-kara",
+	[2441] = "Tazavesh",
+	[2662] = "Dawnbreaker",
+	[2649] = "Priory",
+	[2773] = "Floodgate",
 }
 
 function CreateTPBtn(TPPanel)
@@ -50,8 +60,11 @@ function CreateTPBtn(TPPanel)
 		local texture = C_Spell.GetSpellTexture(spell)
 		icon:SetTexture(texture)
 		btn.icon = icon
-		local name, _ = C_ChallengeMode.GetMapUIInfo(id)
-		btn:SetText(C_ChallengeMode.GetMapUIInfo(id))
+		local text = btn:CreateFontString(nil,"OVERLAY")
+		text:SetFont("Fonts\\FRIZQT__.TTF",12)
+		text:SetText(dungTPName[id])
+		text:SetPoint("BOTTOM",0,-15)
+		
 
 		i=i+1
 		x = x+110
@@ -77,7 +90,6 @@ local spellCdText
 	for id, spell in pairs(dungTPSpells) do
 		if IsSpellKnown(spell) then
 			local t = C_Spell.GetSpellCooldown(spell)
-			print(((t.startTime + t.duration) - GetTime())/3600)
 			if t.duration == 0 then
 				spellCdText= "|cff1eff00 Known teleport spells are available |r"
 				break
