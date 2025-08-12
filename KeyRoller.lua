@@ -2,6 +2,7 @@
 local addonName, addonTable = ...
 local frame = CreateFrame("Frame")
 local mainframe = nil
+local dataFrame = nil
 local playerKeys = {}
 local isRollInProgress = false
 local rollResults = {}
@@ -386,7 +387,7 @@ end
 
 local function CreateScrollBar (state)
 	if state == "create" then
-		scrollFrameTemp = CreateFrame("ScrollFrame", nil, mainFrame, "UIPanelScrollFrameTemplate")
+		scrollFrameTemp = CreateFrame("ScrollFrame", nil, dataFrame, "UIPanelScrollFrameTemplate")
 		scrollFrameTemp:SetPoint("TOPLEFT", 10, -70)
 		scrollFrameTemp:SetPoint("BOTTOMRIGHT", -30, 35)
 
@@ -455,11 +456,13 @@ local function UpdateKeyList(content)
 	if isResizeNeeded then
 		isResizeNeeded = false
 		mainFrame:SetWidth(mainFrame:GetWidth() - (dungNameMaxSize - 20))
+		dataFrame:SetWidth(dataFrame:GetWidth() - (dungNameMaxSize - 20))
 		dungNameMaxSize = 0
 	end
 	
 	if isScrollBar then
 	mainFrame:SetWidth(mainFrame:GetWidth() - 20)
+	dataFrame:SetWidth(dataFrame:GetWidth() - 20)
 	isScrollBar = false
 	CreateScrollBar("hide")
 	end
@@ -480,11 +483,13 @@ local function UpdateKeyList(content)
 	if dungNameMaxSize > 0 and isResizeNeeded then
 		totalWidth = content:GetWidth() + (dungNameMaxSize - 20)
 		mainFrame:SetWidth(mainFrame:GetWidth() + (dungNameMaxSize - 20))
+		dataFrame:SetWidth(dataFrame:GetWidth() + (dungNameMaxSize - 20))
 	end
 	
 	if isGuildDatasReq then
 		isScrollBar = true
 		mainFrame:SetWidth(mainFrame:GetWidth() +20)
+		dataFrame:SetWidth(dataFrame:GetWidth() +20)
 		CreateScrollBar("show")
 	end
 
@@ -587,28 +592,55 @@ local function UpdateKeyList(content)
 end
 
 local function CreateMainFrame()
-    local f = CreateFrame("Frame", "KRFrame", UIParent, "BackdropTemplate")
-    f:SetSize(490, 350) -- width - height
-    f:SetPoint("CENTER")
-    f:SetBackdrop({
+
+    local p = CreateFrame("Frame", "KRFrame", UIParent, "BackdropTemplate")
+    p:SetSize(490, 350) -- width - height
+    p:SetPoint("CENTER")
+    p:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 12,
         insets = { left = 3, right = 1, top = 3, bottom = 3 }
     })
-    f:SetBackdropColor(0, 0, 0, 0.8)
-    f:SetMovable(true)
-    f:EnableMouse(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
-    f:Hide()
+    p:SetBackdropColor(0, 0, 0, 0.8)
+    p:SetMovable(true)
+    p:EnableMouse(true)
+    p:RegisterForDrag("LeftButton")
+    p:SetScript("OnDragStart", p.StartMoving)
+    p:SetScript("OnDragStop", p.StopMovingOrSizing)
+    p:Hide()
 
-    f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    f.title:SetPoint("TOP", 0, -15)
-    f.title:SetFont("Fonts\\FRIZQT__.TTF", 21, "OUTLINE")
-    f.title:SetTextColor(0.8, 0.8, 1)
-    f.title:SetText("KEY ROLLER")
+    p.title = p:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    p.title:SetPoint("TOP", 0, -15)
+    p.title:SetFont("Fonts\\FRIZQT__.TTF", 21, "OUTLINE")
+    p.title:SetTextColor(0.8, 0.8, 1)
+    p.title:SetText("KEY ROLLER")
+	
+	p.closeButton = CreateFrame("Button", nil, p, "UIPanelCloseButton")
+    p.closeButton:SetPoint("TOPRIGHT", -5, -5)
+    p.closeButton:SetSize(24, 24)
+	p.closeButton:SetScript(
+        "OnClick",
+        function()
+			KRFrame:Hide()
+            VersFrame:Hide()
+			TPPanel:Hide()
+			PanelTemplates_SetTab(mainFrame, 1)
+        end
+    )
+	
+	local f = CreateFrame("Frame", "DataFrame", KRFrame)
+    --f:SetSize(490, 350) -- width - height
+    f:SetAllPoints(KRFrame)
+    
+    --f:SetMovable(true)
+    --f:EnableMouse(true)
+    --f:RegisterForDrag("LeftButton")
+    --f:SetScript("OnDragStart", f.StartMoving)
+    --f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    f:Hide()
+	
+	
 
     f.rollButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
 	f.rollButton:RegisterEvent ("PARTY_LEADER_CHANGED")
@@ -641,16 +673,7 @@ local function CreateMainFrame()
 		f.rollButton:Disable()
 	end
 
-    f.closeButton = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-    f.closeButton:SetPoint("TOPRIGHT", -5, -5)
-    f.closeButton:SetSize(24, 24)
-	f.closeButton:SetScript(
-        "OnClick",
-        function()
-			KRFrame:Hide()
-            VersFrame:Hide()
-        end
-    )
+
 
     table.insert(UISpecialFrames, "KRFrame")
 
@@ -767,7 +790,7 @@ local function CreateMainFrame()
 	end
 	tinsert(UISpecialFrames, "Frame")
 	
-    return f
+    return f, p
 end
 
 -- Event manager
@@ -781,13 +804,13 @@ frame:SetScript(
                     local _, _, dungeonName, level, score, resilient = string.find(message, "KEY:(.+):(%d+):(%d+):(%d+)")	
                     if dungeonName and level then
                         playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
-                        UpdateKeyList(KRFrame.keyList.content)
+                        UpdateKeyList(DataFrame.keyList.content)
                     end
 				elseif string.find(message, "^KEY_GUILD_UPDATE:") then
 					local _,_, dungeonName, level, score, resilient, playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+)")
                     if dungeonName and level then
                         playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), realm = realm}
-                        UpdateKeyList(KRFrame.keyList.content)
+                        UpdateKeyList(DataFrame.keyList.content)
                     end
 				elseif string.find(message, "^KEY_GUILD:") then
 					local msg
@@ -878,13 +901,18 @@ SLASH_KR1 = "/kr"
 SlashCmdList["KR"] = function()
     if KRFrame:IsShown() then
         KRFrame:Hide()
+		DataFrame:Hide()
 		VersFrame:Hide()
+		TPPanel:Hide()
+		PanelTemplates_SetTab(mainFrame, 1)
     else
         KRFrame:Show()
+		DataFrame:Show()
     end
 end
 
 -- Initialisation
-mainFrame = CreateMainFrame()
+dataFrame, mainFrame = CreateMainFrame()
+local tabs = CreateTabs(mainFrame, dataFrame)
 CreateVersionFrame()
 CreateScrollBar("create")
