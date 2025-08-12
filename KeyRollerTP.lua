@@ -77,11 +77,12 @@ local spellCdText
 	for id, spell in pairs(dungTPSpells) do
 		if IsSpellKnown(spell) then
 			local t = C_Spell.GetSpellCooldown(spell)
+			print(((t.startTime + t.duration) - GetTime())/3600)
 			if t.duration == 0 then
 				spellCdText= "|cff1eff00 Known teleport spells are available |r"
 				break
 			else 
-				spellCdText= "|cffff8000 Known teleport spells are NOT available (cooldown: "..(t.duration/3600).."h)|r"
+				spellCdText= "|cffff8000 Known teleport spells are NOT available (cooldown: "..math.ceil((((t.startTime + t.duration) - GetTime())/3600)).."h)|r"
 				break
 			end
 		end
