@@ -15,7 +15,6 @@ local versTxt = ""
 local isVersFont = false
 local versFont = nil
 local refreshLock = false
-local refreshLockKey = false
 local refreshLockRoll = false
 local isResizeNeeded = false
 local dungNameMaxSize = 0
@@ -73,25 +72,20 @@ local function GetGroupType()
 end
 
 local function ClearingDatas ()
-
 		if isGuildDatasReq then
 			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS", "GUILD")
-		else
-			if UnitIsGroupLeader(UnitName("player")) then
+		else	
+			if IsInGroup() then 
 				C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", GetGroupType())
-			elseif not IsInGroup() then 
+			else
 				C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "CLEARING_DATAS", "WHISPER", UnitName("player"))
 			end
 		end
 	return
 end
 
-local function DispatchDatas(message)
-	    if IsInGroup() then
-            C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, GetGroupType())
-        else 
-			C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", UnitName("player"))
-		end
+local function DispatchDatas(message, sender)
+	C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", sender)
 end
 
 local function BroacastKeyGuild(sender)
@@ -105,14 +99,14 @@ local function BroacastKeyGuild(sender)
 
 end
 
-local function BroadcastKey()
+local function BroadcastKey(sender)
     local dungeonName, level, resilient = GetPlayerMythicKey()
     if dungeonName and level then
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
         local message = string.format("%s:%d:%d:%d", dungeonName, level, score, resilient)
 		
-		DispatchDatas(message)
+		DispatchDatas(message, sender)
     end
 end
 
@@ -329,17 +323,19 @@ local function DisplayPopUpRefreshData()
     StaticPopup_Show ("GATHERING_DATAS")
 end
 
-local function DisplayPopUpRefreshDataKey(checkBox, refreshBtn, versBtn)
+local function DisplayPopUpRefreshDataKey(checkBox, refreshBtn, versBtn, rollButton)
     StaticPopupDialogs["GATHERING_DATAS_KEY"] = {
     text = "GATHERING DATAS ...",
 	OnCancel = function ()
-		refreshLockKey = false
 		checkBox:Enable()
 		refreshBtn:Enable()
 		versBtn:Enable()
+		if UnitIsGroupLeader(UnitName("player")) then
+			rollButton:Enable()
+		end
 	end,
 	sound = levelup2,
-    timeout = 2,
+    timeout = 1,
     whileDead = true,
     hideOnEscape = true,
     preferredIndex = 3,
@@ -721,33 +717,14 @@ local function CreateMainFrame()
 	f.refreshBtn:SetScript(
         "OnClick",
         function()
-			if not refreshLockKey then
-				if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
-					refreshLockKey = true
-					f.checkBox:Disable()
-					f.refreshBtn:Disable()
-					f.versButton:Disable()
-					ClearingDatas()
-					DisplayPopUpRefreshDataKey(f.checkBox, f.refreshBtn, f.versButton)
-				end
-			end
+			playerKeys = {}
+			f.checkBox:Disable()
+			f.refreshBtn:Disable()
+			f.versButton:Disable()
+			f.rollButton:Disable()
+			ClearingDatas()
+			DisplayPopUpRefreshDataKey(f.checkBox, f.refreshBtn, f.versButton, f.rollButton)
 		end )
-	f.refreshBtn:SetScript(
-		"OnEvent",
-		function()
-			if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
-				f.refreshBtn:Enable()
-			else
-				f.refreshBtn:Disable()
-			end
-		end
-		)
-	
-	if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
-		f.refreshBtn:Enable()
-	else
-		f.refreshBtn:Disable()
-	end
 	
 	f.checkBox = CreateFrame("CheckButton", "nil", f, "ChatConfigCheckButtonTemplate")
 	f.checkBox:RegisterEvent ("PARTY_LEADER_CHANGED")
@@ -758,36 +735,12 @@ local function CreateMainFrame()
 	f.checkBox:SetScript("OnClick", 
 		function()
 			if f.checkBox:GetChecked() then
-				if IsInGroup() then
-					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS_REQ_1", GetGroupType())
-				else 
-					isGuildDatasReq = true
-				end
+				isGuildDatasReq = true
 			else 
-				if IsInGroup() then
-					C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS_REQ_2", GetGroupType())
-				else 
-					isGuildDatasReq = false
-				end
+				isGuildDatasReq = false
 			end
 		end
 	)
-	f.checkBox:SetScript("OnEvent",
-		function()
-			if UnitIsGroupLeader(UnitName("player")) or not IsInGroup(UnitName("player")) then
-				C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "GUILD_DATAS_REQ_2", GetGroupType())
-				f.checkBox:SetChecked(false)
-				f.checkBox:Show()
-			else
-				f.checkBox:Hide()
-			end
-		end
-	)
-	if UnitIsGroupLeader(UnitName("player")) or not IsInGroup() then
-		f.checkBox:Show()
-	else
-		f.checkBox:Hide()
-	end
 	tinsert(UISpecialFrames, "Frame")
 	
     return f, p
@@ -806,23 +759,12 @@ frame:SetScript(
                         playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
                         UpdateKeyList(DataFrame.keyList.content)
                     end
-				elseif string.find(message, "^KEY_GUILD_UPDATE:") then
+				elseif string.find(message, "^KEY_GUILD:") then
 					local _,_, dungeonName, level, score, resilient, playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+)")
                     if dungeonName and level then
                         playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), realm = realm}
                         UpdateKeyList(DataFrame.keyList.content)
                     end
-				elseif string.find(message, "^KEY_GUILD:") then
-					local msg
-					local _,_, dungeonName, level, score, resilient, playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+)")
-					msg = string.format("%s:%d:%d:%d:%s:%s", dungeonName, level, score, resilient, playerName, realm)
-
-					if IsInGroup() then
-						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD_UPDATE:" .. message, GetGroupType())
-					else 
-						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD_UPDATE:" .. message, "WHISPER", UnitName("player"))
-					end
-		
                 elseif string.find(message, "VERSION_PAYLOAD:") then
 					local _,_, player, version = string.find(message, "VERSION_PAYLOAD:(.+):(%A+)")
 					versionList[player] = version
@@ -840,15 +782,9 @@ frame:SetScript(
 						C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER", UnitName("player"))
 					end
 				elseif message == "CLEARING_DATAS" then
-					playerKeys = {}
-					BroadcastKey()
+					BroadcastKey(sender)
 				elseif message == "GUILD_DATAS" then
-					playerKeys = {}
 					BroacastKeyGuild(sender)
-				elseif message == "GUILD_DATAS_REQ_1" then
-					isGuildDatasReq = true
-				elseif message == "GUILD_DATAS_REQ_2" then
-					isGuildDatasReq = false
 				end
             end
         elseif event == "CHAT_MSG_SYSTEM" then
@@ -864,7 +800,7 @@ frame:SetScript(
 
                 local allRolled = true
                 for i = 1, GetNumGroupMembers() do
-                    local name = GetRaidRosterInfo(i)
+                    local name = string.gsub(GetRaidRosterInfo(i), "-.*", "")
                     if not rollResults[name] then
                         allRolled = false
                         break
