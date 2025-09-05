@@ -824,6 +824,7 @@ frame:SetScript(
                             GetGroupType()
                         )
 						DisplayPopUpLeadPromote(winner)
+						refreshLockRoll = false
                     end
                 end
             end
