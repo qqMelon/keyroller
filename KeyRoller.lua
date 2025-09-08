@@ -23,6 +23,13 @@ local isScrollBar = false
 local scrollFrameTemp = nil
 local scrollChild = nil
 
+-- role Icons
+local roleIcons = {
+	TANK = "|TInterface\\AddOns\\keyroller\\Icons\\Role_Tank:13:13|t",
+	HEALER = "|TInterface\\AddOns\\keyroller\\Icons\\Role_Healer:13:13|t",
+	DAMAGER = "|TInterface\\AddOns\\keyroller\\Icons\\Role_Damage:13:13|t",
+}
+
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
@@ -91,9 +98,10 @@ end
 local function BroacastKeyGuild(sender)
 	local dungeonName, level, resilient = GetPlayerMythicKey()
     if dungeonName and level then
+		local role = GetSpecializationRole(GetSpecialization())
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
-        local message = string.format("%s:%d:%d:%d:%s:%s", dungeonName, level, score, resilient, UnitNameUnmodified("player"), GetRealmName())
+        local message = string.format("%s:%d:%d:%d:%s:%s:%s", dungeonName, level, score, resilient, role, UnitNameUnmodified("player"), GetRealmName())
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD:" .. message, "WHISPER", sender)
 	end
 
@@ -102,9 +110,10 @@ end
 local function BroadcastKey(sender)
     local dungeonName, level, resilient = GetPlayerMythicKey()
     if dungeonName and level then
+		local role = GetSpecializationRole(GetSpecialization())
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
-        local message = string.format("%s:%d:%d:%d", dungeonName, level, score, resilient)
+        local message = string.format("%s:%d:%d:%d:%s", dungeonName, level, score, resilient, role)
 		
 		DispatchDatas(message, sender)
     end
@@ -405,21 +414,25 @@ local function CreateScrollBar (state)
 	end
 end
 
-local function CreateInviteBtn(player, realm, frame)
+local function CreateInviteBtn(player, realm, frame, role)
 	invBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	invBtn:RegisterEvent ("PARTY_LEADER_CHANGED")
 	invBtn:RegisterEvent ("GROUP_ROSTER_UPDATE")
     invBtn:SetPoint("LEFT", 2, 0)
     invBtn:SetSize(120, 21)
 	local text = invBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	text:SetText(string.gsub(player, "-.*", ""))
+	text:SetText(string.gsub(player, "-.*", "").."   "..roleIcons[role])
 	text:SetPoint("LEFT",5,0)
 
     invBtn:SetScript(
         "OnClick",
         function(self, event)
 			if string.gsub(UnitName("player"), "-.*", "") ~= string.gsub(player, "-.*", "") then
-                C_PartyInfo.InviteUnit(player..'-'..realm)
+				if realm ~= nil then
+					C_PartyInfo.InviteUnit(player..'-'..realm)
+				else
+					C_PartyInfo.InviteUnit(player)
+				end
 			end
         end
     )
@@ -526,7 +539,7 @@ local function UpdateKeyList(content)
 			local btn
 			if isGuildDatasReq then
 				row = CreateFrame("Frame", nil, scrollChild)
-				btn = CreateInviteBtn(player, key.realm, row)
+				btn = CreateInviteBtn(player, key.realm, row, key.role)
 			else
 				row = CreateFrame("Frame", nil, content)
 			end
@@ -552,7 +565,7 @@ local function UpdateKeyList(content)
             nameText:SetPoint("LEFT", 5, 0)
             --nameText:SetWidth(nameWidth)
             nameText:SetJustifyH("LEFT")
-            nameText:SetText(string.gsub(player, "-.*", ""))
+            nameText:SetText(string.gsub(player, "-.*", "").."   "..roleIcons[key.role])
 			
 			local scoreText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 			local colorScore = GetColorForScore(key.score)
@@ -754,15 +767,15 @@ frame:SetScript(
             local prefix, message, channel, sender = ...
             if prefix == ADDON_PREFIX then
                 if string.find(message, "^KEY:") then
-                    local _, _, dungeonName, level, score, resilient = string.find(message, "KEY:(.+):(%d+):(%d+):(%d+)")	
+                    local _, _, dungeonName, level, score, resilient, role = string.find(message, "KEY:(.+):(%d+):(%d+):(%d+):(.+)")	
                     if dungeonName and level then
-                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient)}
+                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), role = role}
                         UpdateKeyList(DataFrame.keyList.content)
                     end
 				elseif string.find(message, "^KEY_GUILD:") then
-					local _,_, dungeonName, level, score, resilient, playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+)")
+					local _,_, dungeonName, level, score, resilient, role,  playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+):(.+)")
                     if dungeonName and level then
-                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), realm = realm}
+                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), role = role, realm}
                         UpdateKeyList(DataFrame.keyList.content)
                     end
                 elseif string.find(message, "VERSION_PAYLOAD:") then
