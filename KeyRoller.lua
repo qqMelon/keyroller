@@ -428,7 +428,11 @@ local function CreateInviteBtn(player, realm, frame, role)
         "OnClick",
         function(self, event)
 			if string.gsub(UnitName("player"), "-.*", "") ~= string.gsub(player, "-.*", "") then
-                C_PartyInfo.InviteUnit(player..'-'..realm)
+				if realm ~= nil then
+					C_PartyInfo.InviteUnit(player..'-'..realm)
+				else
+					C_PartyInfo.InviteUnit(player)
+				end
 			end
         end
     )
