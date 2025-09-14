@@ -639,14 +639,7 @@ local function CreateMainFrame()
     )
 	
 	local f = CreateFrame("Frame", "DataFrame", KRFrame)
-    --f:SetSize(490, 350) -- width - height
     f:SetAllPoints(KRFrame)
-    
-    --f:SetMovable(true)
-    --f:EnableMouse(true)
-    --f:RegisterForDrag("LeftButton")
-    --f:SetScript("OnDragStart", f.StartMoving)
-    --f:SetScript("OnDragStop", f.StopMovingOrSizing)
     f:Hide()
 	
 	
