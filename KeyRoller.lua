@@ -775,7 +775,7 @@ frame:SetScript(
 				elseif string.find(message, "^KEY_GUILD:") then
 					local _,_, dungeonName, level, score, resilient, role,  playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+):(.+)")
                     if dungeonName and level then
-                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), role = role, realm}
+                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), role = role, realm=realm}
                         UpdateKeyList(DataFrame.keyList.content)
                     end
                 elseif string.find(message, "VERSION_PAYLOAD:") then
