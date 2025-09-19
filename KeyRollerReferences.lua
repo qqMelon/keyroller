@@ -2,41 +2,35 @@ local addonName, addonTable = ...
 addonTable.constFRLocale = "frFR"
 addonTable.constENLocale = "enUS"
 
---- locale FR ---
-
-addonTable.dungListFR = {
-[1] = "Faille de Flamme-Noire",
-[2] = "Prieuré de la Flamme sacrée",
-[3] = "La colonie",
-[4] = "Théâtre de la Souffrance",
-[5] = "Le Filon",
-[6] = "Opération Mécagone - L’atelier",
-[7] = "Opération Vannes ouvertes",
-[8] = "Hydromellerie de Brassecendre",
-[9] = "Le Brise-Aube",
-[10] = "Ara-Kara, la cité des Échos",
-[11] = "Écodôme Al’dani",
-[12] = "Salles de l’Expiation",
-[13] = "Tazavesh : les rues des merveilles", 
-[14] = "Tazavesh : le stratagème de So’leah"
+-- THX BigWigs team :)
+dungTPSpells = {
+	[2830] = 1237215, -- aldani
+	[2287] = 354465, -- hoa
+	[2660] = 445417, -- arakara
+	[2441] = 367416, -- tazavesh
+	[2662] = 445414, -- dawnbreaker
+	[2649] = 445444, -- priory
+	[2773] = 1216786,-- floodgate
 }
 
- --- DEFAULT locale EN ---
- 
-addonTable.dungListEN = {
-[1] = "Darkflame Cleft", 
-[2] = "Priory of the Sacred Flame",
-[3] = "The Rookery",
-[4] = "Theater of Pain",
-[5] = "The MOTHERLODE!!",
-[6] = "Operation: Mechagon - Workshop",
-[7] = "Operation: Floodgate",
-[8] = "Cinderbrew Meadery",
-[9] = "The Dawnbreaker",
-[10] = "Ara-Kara, City of Echoes",
-[11] = "Eco-Dome Al'dani",
-[12] = "Halls of Atonement",
-[13] = "Tazavesh: Streets of Wonder",
-[14] = "Tazavesh: So'leah's Gambit"
+dungTPName = {
+	[2830] = "Aldani",
+	[2287] = "HOA",
+	[2660] = "Ara-kara",
+	[2441] = "Tazavesh",
+	[2662] = "Dawnbreaker",
+	[2649] = "Priory",
+	[2773] = "Floodgate",
+}
+
+dungRefId = {
+	[2830] = 542, -- aldani
+	[2287] = 378, -- hoa
+	[2660] = 503, -- arakara
+	[2441] = 391, -- tazavesh street
+	[2441] = 392, -- tazavesh gambit
+	[2662] = 505, -- dawnbreaker
+	[2649] = 499, -- priory
+	[2773] = 525, -- floodgate
 }
 	

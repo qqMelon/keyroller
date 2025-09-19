@@ -1,26 +1,6 @@
 local addonName, addonTable = ...
 C_ChatInfo.RegisterAddonMessagePrefix("KR")
 local tpFrame = nil
--- THX BigWigs team :)
-local dungTPSpells = {
-	[2830] = 1237215, -- aldani
-	[2287] = 354465, -- hoa
-	[2660] = 445417, -- arakara
-	[2441] = 367416, -- tazavesh
-	[2662] = 445414, -- dawnbreaker
-	[2649] = 445444, -- priory
-	[2773] = 1216786,-- floodgate
-}
-
-local dungTPName = {
-	[2830] = "Aldani",
-	[2287] = "HOA",
-	[2660] = "Ara-kara",
-	[2441] = "Tazavesh",
-	[2662] = "Dawnbreaker",
-	[2649] = "Priory",
-	[2773] = "Floodgate",
-}
 
 function CreateTPBtn(TPPanel)
 	local x = 30

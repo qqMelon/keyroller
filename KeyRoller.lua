@@ -91,17 +91,13 @@ local function ClearingDatas ()
 	return
 end
 
-local function DispatchDatas(message, sender)
-	C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", sender)
-end
-
 local function BroacastKeyGuild(sender)
 	local dungeonName, level, resilient = GetPlayerMythicKey()
     if dungeonName and level then
 		local role = GetSpecializationRole(GetSpecialization())
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
-        local message = string.format("%s:%d:%d:%d:%s:%s:%s", dungeonName, level, score, resilient, role, UnitNameUnmodified("player"), GetRealmName())
+        local message = string.format("%d:%d:%d:%d:%s:%s:%s", C_MythicPlus.GetOwnedKeystoneMapID(), level, score, resilient, role, UnitNameUnmodified("player"), GetRealmName())
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD:" .. message, "WHISPER", sender)
 	end
 
@@ -113,9 +109,9 @@ local function BroadcastKey(sender)
 		local role = GetSpecializationRole(GetSpecialization())
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
-        local message = string.format("%s:%d:%d:%d:%s", dungeonName, level, score, resilient, role)
+        local message = string.format("%d:%d:%d:%d:%s", C_MythicPlus.GetOwnedKeystoneMapID(), level, score, resilient, role)
 		
-		DispatchDatas(message, sender)
+		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", sender)
     end
 end
 
@@ -478,8 +474,8 @@ local function UpdateKeyList(content)
 
 	--checking if resizing is needed
 	for player, key in pairs(playerKeys) do
-		local dungName = ManageDungNameByLocale(key.dungeon)
-		local lenValue = string.len(dungName)
+		local info = C_ChallengeMode.GetMapUIInfo(dungRefId[tonumber(key.dungeon)])
+		local lenValue = string.len(info)
 		if lenValue >= 20 and lenValue > dungNameMaxSize then
 			dungNameMaxSize = lenValue
 			isResizeNeeded = true
@@ -590,8 +586,8 @@ local function UpdateKeyList(content)
 
             local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             dungeonText:SetPoint("RIGHT", -5, 0)
-			local dungName = ManageDungNameByLocale(key.dungeon)
-            dungeonText:SetText(dungName)
+			local info = C_ChallengeMode.GetMapUIInfo(dungRefId[tonumber(key.dungeon)])
+            dungeonText:SetText(info)
             dungeonText:SetJustifyH("RIGHT")
 				
         end
@@ -760,15 +756,15 @@ frame:SetScript(
             local prefix, message, channel, sender = ...
             if prefix == ADDON_PREFIX then
                 if string.find(message, "^KEY:") then
-                    local _, _, dungeonName, level, score, resilient, role = string.find(message, "KEY:(.+):(%d+):(%d+):(%d+):(.+)")	
-                    if dungeonName and level then
-                        playerKeys[sender] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), role = role}
+                    local _, _, dungId, level, score, resilient, role = string.find(message, "KEY:(%d+):(%d+):(%d+):(%d+):(.+)")	
+                    if dungId and level then
+                        playerKeys[sender] = {dungeon = dungId, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), role = role}
                         UpdateKeyList(DataFrame.keyList.content)
                     end
 				elseif string.find(message, "^KEY_GUILD:") then
-					local _,_, dungeonName, level, score, resilient, role,  playerName, realm = string.find(message, "KEY_GUILD:(.+):(%d+):(%d+):(%d+):(.+):(.+):(.+)")
-                    if dungeonName and level then
-                        playerKeys[playerName] = {dungeon = dungeonName, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), role = role, realm=realm}
+					local _,_, dungId, level, score, resilient, role,  playerName, realm = string.find(message, "KEY_GUILD:(%d+):(%d+):(%d+):(%d+):(.+):(.+):(.+)")
+                    if dungId and level then
+                        playerKeys[playerName] = {dungeon = dungId, level = tonumber(level), score = tonumber(score), resilient = tonumber(resilient), role = role, realm=realm}
                         UpdateKeyList(DataFrame.keyList.content)
                     end
                 elseif string.find(message, "VERSION_PAYLOAD:") then
