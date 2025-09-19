@@ -33,4 +33,14 @@ dungRefId = {
 	[2649] = 499, -- priory
 	[2773] = 525, -- floodgate
 }
+
+dungBckPath = {
+	[2830] = "Interface\\lfgframe\\lfgicon-ecodome.blp", -- aldani
+	[2287] = "Interface\\lfgframe\\lfgicon-hallsofatonement.blp", -- hoa
+	[2660] = "Interface\\lfgframe\\lfgicon-arakaracityofechoes.blp", -- arakara
+	[2441] = "Interface\\lfgframe\\lfgicon-tazaveshtheveiledmarket.blp", -- tazavesh
+	[2662] = "Interface\\lfgframe\\lfgicon-thedawnbreaker.blp", -- dawnbreaker
+	[2649] = "Interface\\lfgframe\\lfgicon-prioryofthesacredflames.blp", -- priory
+	[2773] = "Interface\\lfgframe\\lfgicon-waterworks.blp", -- floodgate
+}
 	
