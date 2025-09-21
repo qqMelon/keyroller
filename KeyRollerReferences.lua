@@ -64,4 +64,3 @@ dungRefId = {
 	[2649] = 499, -- priory
 	[2773] = 525, -- floodgate
 }
-	
