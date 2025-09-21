@@ -98,6 +98,7 @@ local function BroacastKeyGuild(sender)
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
         local message = string.format("%d:%d:%d:%d:%s:%s:%s", C_MythicPlus.GetOwnedKeystoneMapID(), level, score, resilient, role, UnitNameUnmodified("player"), GetRealmName())
+
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD:" .. message, "WHISPER", sender)
 	end
 
@@ -109,9 +110,11 @@ local function BroadcastKey(sender)
 		local role = GetSpecializationRole(GetSpecialization())
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
+
         local message = string.format("%d:%d:%d:%d:%s", C_MythicPlus.GetOwnedKeystoneMapID(), level, score, resilient, role)
 		
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", sender)
+
     end
 end
 
