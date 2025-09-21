@@ -37,14 +37,13 @@ function CreateTPBtn(TPPanel)
 		local icon = btn:CreateTexture()
 		icon:SetSize(48, 48)
 		icon:SetAllPoints(btn)
-		local texture = C_Spell.GetSpellTexture(spell)
-		icon:SetTexture(texture)
+		icon:SetTexture(dungBckPath[tonumber(id)])
+		icon:SetTexCoord(0, 1, 0, 1) 
 		btn.icon = icon
 		local text = btn:CreateFontString(nil,"OVERLAY")
 		text:SetFont("Fonts\\FRIZQT__.TTF",12)
 		text:SetText(dungTPName[id])
 		text:SetPoint("BOTTOM",0,-15)
-		
 
 		i=i+1
 		x = x+110
