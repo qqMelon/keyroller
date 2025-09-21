@@ -43,24 +43,3 @@ dungBckPath = {
 	[2649] = "Interface\\lfgframe\\lfgicon-prioryofthesacredflames.blp", -- priory
 	[2773] = "Interface\\lfgframe\\lfgicon-waterworks.blp", -- floodgate
 }
-
-dungTPName = {
-	[2830] = "Aldani",
-	[2287] = "HOA",
-	[2660] = "Ara-kara",
-	[2441] = "Tazavesh",
-	[2662] = "Dawnbreaker",
-	[2649] = "Priory",
-	[2773] = "Floodgate",
-}
-
-dungRefId = {
-	[2830] = 542, -- aldani
-	[2287] = 378, -- hoa
-	[2660] = 503, -- arakara
-	[2441] = 391, -- tazavesh street
-	[2441] = 392, -- tazavesh gambit
-	[2662] = 505, -- dawnbreaker
-	[2649] = 499, -- priory
-	[2773] = 525, -- floodgate
-}
