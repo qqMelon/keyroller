@@ -42,7 +42,7 @@ dungBckPath = {
 	[2662] = "Interface\\lfgframe\\lfgicon-thedawnbreaker.blp", -- dawnbreaker
 	[2649] = "Interface\\lfgframe\\lfgicon-prioryofthesacredflames.blp", -- priory
 	[2773] = "Interface\\lfgframe\\lfgicon-waterworks.blp", -- floodgate
-=======
+}
 
 dungTPName = {
 	[2830] = "Aldani",
