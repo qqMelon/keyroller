@@ -97,7 +97,9 @@ local function BroacastKeyGuild(sender)
 		local role = GetSpecializationRole(GetSpecialization())
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
+
         local message = string.format("%d:%d:%d:%d:%s:%s:%s", C_MythicPlus.GetOwnedKeystoneChallengeMapID(), level, score, resilient, role, UnitNameUnmodified("player"), GetRealmName())
+
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY_GUILD:" .. message, "WHISPER", sender)
 	end
 
@@ -109,9 +111,11 @@ local function BroadcastKey(sender)
 		local role = GetSpecializationRole(GetSpecialization())
 		local ratingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(UnitFullName("player"))	
 		local score = ratingSummary.currentSeasonScore
+
         local message = string.format("%d:%d:%d:%d:%s", C_MythicPlus.GetOwnedKeystoneChallengeMapID(), level, score, resilient, role)
 		
 		C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "KEY:" .. message, "WHISPER", sender)
+
     end
 end
 
@@ -474,7 +478,9 @@ local function UpdateKeyList(content)
 
 	--checking if resizing is needed
 	for player, key in pairs(playerKeys) do
+
 		local info = C_ChallengeMode.GetMapUIInfo(key.dungeon)
+
 		local lenValue = string.len(info)
 		if lenValue >= 20 and lenValue > dungNameMaxSize then
 			dungNameMaxSize = lenValue
@@ -586,7 +592,9 @@ local function UpdateKeyList(content)
 
             local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             dungeonText:SetPoint("RIGHT", -5, 0)
+
 			local info = C_ChallengeMode.GetMapUIInfo(key.dungeon)
+
             dungeonText:SetText(info)
             dungeonText:SetJustifyH("RIGHT")
 				
