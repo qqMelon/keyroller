@@ -23,17 +23,6 @@ dungTPName = {
 	[2773] = "Floodgate",
 }
 
-dungRefId = {
-	[2830] = 542, -- aldani
-	[2287] = 378, -- hoa
-	[2660] = 503, -- arakara
-	[2441] = 391, -- tazavesh street
-	[2441] = 392, -- tazavesh gambit
-	[2662] = 505, -- dawnbreaker
-	[2649] = 499, -- priory
-	[2773] = 525, -- floodgate
-}
-
 dungBckPath = {
 	[2830] = "Interface\\lfgframe\\lfgicon-ecodome.blp", -- aldani
 	[2287] = "Interface\\lfgframe\\lfgicon-hallsofatonement.blp", -- hoa
