@@ -349,43 +349,6 @@ local function DisplayPopUpRefreshDataKey(checkBox, refreshBtn, versBtn, rollBut
     StaticPopup_Show ("GATHERING_DATAS_KEY")
 end
 
---- Manage locale for i18n (frFR and enUS(default) supported) ---
-local function ManageDungNameByLocale(dungName)
-	local playerLocale = GetLocale()
-	local dungListKey = nil
-	local returnValue = nil
-	
-	for k,v in pairs (addonTable.dungListFR) do
-		if dungName == addonTable.dungListFR[k] then
-			dungListKey = k
-			break
-		-- bypass fix for Tazavesh dung not matching references (frFR locale)
-		elseif dungName:find("^Tazavesh") and dungName:find("merveilles$") then
-			returnValue = "Tazavesh : les rues des merveilles"
-			return returnValue	
-		elseif dungName:find("^Tazavesh") and dungName:find("So’leah$") then
-			returnValue = "Tazavesh : le stratagème de So’leah"
-			return returnValue	
-		end
-	end
-
-	for k,v in pairs (addonTable.dungListEN) do
-		if dungName == addonTable.dungListEN[k] then
-			dungListKey = k
-			break
-		end
-	end
-	
-	
-	if playerLocale == addonTable.constFRLocale then
-		returnValue = addonTable.dungListFR[dungListKey]
-	else 
-		returnValue = addonTable.dungListEN[dungListKey]
-	end
-	
-	return returnValue
-end
-
 local function CreateScrollBar (state)
 	if state == "create" then
 		scrollFrameTemp = CreateFrame("ScrollFrame", nil, dataFrame, "UIPanelScrollFrameTemplate")
