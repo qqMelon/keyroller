@@ -22,6 +22,7 @@ local isGuildDatasReq = false
 local isScrollBar = false
 local scrollFrameTemp = nil
 local scrollChild = nil
+local inInstance, instanceType = IsInInstance()
 
 -- role Icons
 local roleIcons = {
@@ -378,10 +379,10 @@ local function CreateInviteBtn(player, realm, frame, role)
 	invBtn:RegisterEvent ("PARTY_LEADER_CHANGED")
 	invBtn:RegisterEvent ("GROUP_ROSTER_UPDATE")
     invBtn:SetPoint("LEFT", 2, 0)
-    invBtn:SetSize(120, 21)
-	local text = invBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    invBtn:SetSize(155, 28)
+	local text = invBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
 	text:SetText(string.gsub(player, "-.*", "").."   "..roleIcons[role])
-	text:SetPoint("LEFT",5,0)
+	text:SetPoint("LEFT",5,-1)
 
     invBtn:SetScript(
         "OnClick",
@@ -471,23 +472,23 @@ local function UpdateKeyList(content)
     --header:SetPoint("TOPRIGHT", 0, 0)
 	header:SetSize(totalWidth, rowHeight)
 
-    local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    local h1 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     h1:SetPoint("LEFT", 5, 0)
     h1:SetText("Player")
 	
-	local h4 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    h4:SetPoint("LEFT", 115, 0)
-    h4:SetText("RIO Score")
+	local h4 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    h4:SetPoint("LEFT", 165, 0)
+    h4:SetText("RIO")
 
-    local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    h2:SetPoint("CENTER", header, "CENTER", -38, 0)
+    local h2 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    h2:SetPoint("CENTER", header, "CENTER", -50, 0)
     h2:SetText("Level")
 	
-	local h5 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    h5:SetPoint("CENTER", header, "CENTER", 10, 0)
-    h5:SetText("Resilient")
+	local h5 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    h5:SetPoint("CENTER", header, "CENTER", 0, 0)
+    h5:SetText("Resi")
 
-    local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    local h3 = header:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     h3:SetPoint("RIGHT", -5, 0)
     h3:SetText("Dungeon")
 
@@ -520,34 +521,34 @@ local function UpdateKeyList(content)
 			
 			
 
-            local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
             nameText:SetPoint("LEFT", 5, 0)
             --nameText:SetWidth(nameWidth)
             nameText:SetJustifyH("LEFT")
-            nameText:SetText(string.gsub(player, "-.*", "").."   "..roleIcons[key.role])
+            nameText:SetText(string.gsub(player, "-.*", "").."  "..roleIcons[key.role])
 			
-			local scoreText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			local scoreText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
 			local colorScore = GetColorForScore(key.score)
-            scoreText:SetPoint("LEFT", 130, 0)
+            scoreText:SetPoint("LEFT", 160, 0)
             --scoreText:SetWidth(scoreWidth)
             scoreText:SetJustifyH("LEFT")
             scoreText:SetText(colorScore .. key.score .. "|r")
 
-            local levelText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local levelText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
             local color = GetColorForLevel(key.level)
-            levelText:SetPoint("CENTER", row, "CENTER", -40, 0)
+            levelText:SetPoint("CENTER", row, "CENTER", -55, 0)
             levelText:SetText(color .. "+" .. key.level .. "|r")
             levelText:SetJustifyH("CENTER")
 			
-			local resiText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			local resiText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
             local color = GetColorForLevel(key.resilient)
-            resiText:SetPoint("CENTER", row, "CENTER", 10, 0)
+            resiText:SetPoint("CENTER", row, "CENTER", 0, 0)
 			if key.resilient ~= 0 then
 				resiText:SetText(color .. key.resilient .. "|r")
 			end
             resiText:SetJustifyH("CENTER")
 
-            local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local dungeonText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
             dungeonText:SetPoint("RIGHT", -5, 0)
 			local info = C_ChallengeMode.GetMapUIInfo(key.dungeon)
             dungeonText:SetText(info)
@@ -562,7 +563,7 @@ end
 local function CreateMainFrame()
 
     local p = CreateFrame("Frame", "KRFrame", UIParent, "BackdropTemplate")
-    p:SetSize(490, 350) -- width - height
+    p:SetSize(600, 390) -- width - height
     p:SetPoint("CENTER")
     p:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
@@ -598,7 +599,8 @@ local function CreateMainFrame()
     )
 	
 	local f = CreateFrame("Frame", "DataFrame", KRFrame)
-    f:SetAllPoints(KRFrame)
+    	f:SetSize(600, 310) -- width - height
+    f:SetPoint("TOPLEFT",0,0)
     f:Hide()
 	
 	
@@ -606,8 +608,9 @@ local function CreateMainFrame()
     f.rollButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
 	f.rollButton:RegisterEvent ("PARTY_LEADER_CHANGED")
     f.rollButton:SetPoint("BOTTOM", 5, 5)
-    f.rollButton:SetSize(120, 25)
-    f.rollButton:SetText("Roll the Keys !")
+    f.rollButton:SetSize(125, 28)
+	f.rollButton.Text:SetFont("Fonts\\FRIZQT__.TTF",14)
+	f.rollButton.Text:SetText("Roll the keys!")
     f.rollButton:SetScript(
         "OnClick",
         function()
@@ -653,8 +656,9 @@ local function CreateMainFrame()
 
 	f.versButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     f.versButton:SetPoint("BOTTOMRIGHT", -5, 5)
-    f.versButton:SetSize(65, 25)
-    f.versButton:SetText("v. "..C_AddOns.GetAddOnMetadata("keyroller", "Version"))
+    f.versButton:SetSize(70, 28)
+	f.versButton.Text:SetFont("Fonts\\FRIZQT__.TTF",14)
+    f.versButton.Text:SetText("v. "..C_AddOns.GetAddOnMetadata("keyroller", "Version"))
 	f.versButton:SetScript(
         "OnClick",
         function()
@@ -677,8 +681,9 @@ local function CreateMainFrame()
 	f.refreshBtn:RegisterEvent ("PARTY_LEADER_CHANGED")
 	f.refreshBtn:RegisterEvent("GROUP_ROSTER_UPDATE")
     f.refreshBtn:SetPoint("BOTTOMLEFT", 5, 5)
-    f.refreshBtn:SetSize(65, 25)
-    f.refreshBtn:SetText("Refresh")
+    f.refreshBtn:SetSize(80, 28)
+	f.refreshBtn.Text:SetFont("Fonts\\FRIZQT__.TTF",14)
+	f.refreshBtn.Text:SetText("Refresh")
 	f.refreshBtn:SetScript(
         "OnClick",
         function()
@@ -694,8 +699,8 @@ local function CreateMainFrame()
 	f.checkBox = CreateFrame("CheckButton", "nil", f, "ChatConfigCheckButtonTemplate")
 	f.checkBox:RegisterEvent ("PARTY_LEADER_CHANGED")
 	f.checkBox:RegisterEvent ("GROUP_ROSTER_UPDATE")
-	f.checkBox:SetPoint("BOTTOMLEFT", 70, -1)
-	f.checkBox:SetSize(35, 35)
+	f.checkBox:SetPoint("BOTTOMLEFT", 83, -2)
+	f.checkBox:SetSize(40, 40)
 	f.checkBox.tooltip = "Switch to guild datas with invite button ? (online members only)"
 	f.checkBox:SetScript("OnClick", 
 		function()
@@ -715,6 +720,7 @@ end
 frame:SetScript(
     "OnEvent",
     function(self, event, ...)
+	inInstance, instanceType = IsInInstance()
         if event == "CHAT_MSG_ADDON" then
             local prefix, message, channel, sender = ...
             if prefix == ADDON_PREFIX then
@@ -752,7 +758,7 @@ frame:SetScript(
 					BroacastKeyGuild(sender)
 				end
             end
-        elseif event == "CHAT_MSG_SYSTEM" then
+        elseif event == "CHAT_MSG_SYSTEM" and isRollInProgress then
             local message = ...
 			local player, roll, min, max = string.match(message, "^(.-)%s.-(%d+)%s%((%d+)%-(%d+)%)")
             if player and isRollInProgress then
@@ -797,24 +803,35 @@ frame:SetScript(
     end
 )
 
--- Commands
--- luacheck: globals SLASH_KR1
 SLASH_KR1 = "/kr"
 SlashCmdList["KR"] = function()
-    if KRFrame:IsShown() then
-        KRFrame:Hide()
-		DataFrame:Hide()
-		VersFrame:Hide()
-		TPPanel:Hide()
-		PanelTemplates_SetTab(mainFrame, 1)
-    else
-        KRFrame:Show()
-		DataFrame:Show()
-    end
+inInstance, instanceType = IsInInstance()
+	if instanceType == "neighborhood" or not inInstance then 
+		if KRFrame:IsShown() then
+			KRFrame:Hide()
+			DataFrame:Hide()
+			VersFrame:Hide()
+			TPPanel:Hide()
+		else
+			KRFrame:Show()
+			DataFrame:Show()
+			CheckAndShowTPPanel(TPPanel)
+		end
+	else
+		print("KeyRoller is unavailable in instance.")
+	end
 end
 
 -- Initialisation
-dataFrame, mainFrame = CreateMainFrame()
-local tabs = CreateTabs(mainFrame, dataFrame)
-CreateVersionFrame()
-CreateScrollBar("create")
+
+local function initKR()
+inInstance, instanceType = IsInInstance()
+		-- Initialisation
+		dataFrame, mainFrame = CreateMainFrame()
+		CreateTPPanel(mainFrame)
+		CreateVersionFrame()
+		CreateScrollBar("create")
+		print("KeyRoller loaded.")
+end
+
+initKR()

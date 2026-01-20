@@ -1,38 +1,22 @@
 local addonName, addonTable = ...
 C_ChatInfo.RegisterAddonMessagePrefix("KR")
-local tpFrame = nil
+local isTpUp = false
 
 function CreateTPBtn(TPPanel)
-	local x = 30
-	local y = -80
+	local x = 9
 	local i = 0
 	for id, spell in pairs(dungTPSpells) do
-		local btn = CreateFrame("Button", "DungTP", TPPanel, "InsecureActionButtonTemplate")
+		local btn = CreateFrame("Button", "DungTP"..i, TPPanel, "InsecureActionButtonTemplate")
 		btn:RegisterEvent("CHAT_MSG_ADDON")
-		btn:SetSize(90, 70) -- width - height
+		btn:SetSize(69, 59) -- width - height
 
 		btn:SetMovable(false)
 		btn:EnableMouse(true)
-		btn:SetPoint("TOPLEFT", x, y)
+		btn:SetPoint("TOPLEFT", x, 0)
 		btn.spellID = spell
 		btn:SetAttribute("type", "spell")
 		btn:SetAttribute("spell", spell)
 		btn:RegisterForClicks("AnyDown", "AnyUp")
-		btn:SetScript("OnEvent", function(self, event, ...)
-			if event == "CHAT_MSG_ADDON" then
-				local prefix, message, channel, sender = ...
-				if prefix == "KR" and message == "CHECK_TP" then
-					local t = C_Spell.GetSpellCooldown(spell)
-					if not IsSpellKnown(btn.spellID) or t.duration ~= 0 then
-						btn:Disable()
-						btn.icon:SetDesaturated(true)
-					else
-						btn:Enable()
-						btn.icon:SetDesaturated(false)
-					end
-				end
-			end
-		end)
 		
 		local icon = btn:CreateTexture()
 		icon:SetSize(48, 48)
@@ -40,23 +24,17 @@ function CreateTPBtn(TPPanel)
 		icon:SetTexture(dungBckPath[tonumber(id)])
 		icon:SetTexCoord(0, 1, 0, 1) 
 		btn.icon = icon
-		local text = btn:CreateFontString(nil,"OVERLAY")
-		text:SetFont("Fonts\\FRIZQT__.TTF",12)
-		text:SetText(dungTPName[id])
-		text:SetPoint("BOTTOM",0,-15)
+					if not IsSpellKnown(btn.spellID) then
+						btn:Disable()
+						btn.icon:SetDesaturated(true)
+					else
+						btn:Enable()
+						btn.icon:SetDesaturated(false)
+					end
+
 
 		i=i+1
-		x = x+110
-		if i == 4 then
-			x = 85
-			y = -180
-		end
-		
-		if not IsSpellKnown(spell) then
-			btn:Disable()
-			icon:SetDesaturated(true)
-		end
-		
+		x = x + 73.5
 		
 	end
 	
@@ -70,9 +48,11 @@ local spellCdText
 		if IsSpellKnown(spell) then
 			local t = C_Spell.GetSpellCooldown(spell)
 			if t.duration == 0 then
+				isTpUp = true
 				spellCdText= "|cff1eff00 Known teleport spells are available |r"
 				break
 			else 
+				isTpUp = false
 				spellCdText= "|cffff8000 Known teleport spells are NOT available (cooldown: "..math.ceil((((t.startTime + t.duration) - GetTime())/3600)).."h)|r"
 				break
 			end
@@ -84,67 +64,38 @@ end
 
 function CreateTPPanel(mainFrame)
 	local tpPanel=CreateFrame("Frame", "TPPanel", mainFrame);
-	tpPanel:RegisterEvent("CHAT_MSG_ADDON")
     tinsert(UISpecialFrames, "TPPanel")
-    tpPanel:Hide()
-    tpPanel:SetAllPoints(mainFrame);
+	tpPanel:SetSize(600,80)
+    tpPanel:SetPoint("TOPLEFT",0,-310);
     tpPanel.Text = tpPanel:CreateFontString()
     tpPanel.Text:SetFontObject(GameFontNormal)
     tpPanel.Text:SetText(CheckTPSpellCD())
     tpPanel.Text:SetPoint("BOTTOM", 0, 45)
-	tpPanel:SetScript(
-		"OnHide", function()
-			PanelTemplates_SetTab(mainFrame, 1)
-		end
-	)tpPanel:SetScript("OnEvent", function(self, event, ...)
-		if event == "CHAT_MSG_ADDON" then
-			local prefix, message, channel, sender = ...
-			if prefix == "KR" and message == "CHECK_TP" then
-				tpPanel.Text:SetText(CheckTPSpellCD())
-			end
-		end
-	
-	end)
 	
 	CreateTPBtn(TPPanel)
 	
 	return tpPanel
 end
-
-function CreateTabs(mainFrame, dataFrame)
-	local tpPanel = CreateTPPanel(mainFrame)
-    local Tab1=CreateFrame("Button" ,"Tab1", mainFrame, "PanelTabButtonTemplate")
-    PanelTemplates_SetNumTabs(mainFrame,1);
-    Tab1:SetPoint("BOTTOMLEFT",5,-31);
-    Tab1:SetText("Keys");
-    Tab1:SetID(1)
-	Tab1:SetScript(
-		"OnClick", function()
-		PanelTemplates_SetTab(mainFrame, 1)
-		--C_ChatInfo.SendAddonMessage("KR", "CHECK_TP", "WHISPER", UnitName("player"))
-			tpPanel:Hide()
-			dataFrame:Show()
-		end
-	)
+		
+function CheckAndShowTPPanel(tpPanel)
+	-- checking tp spells cd's
+	tpPanel.Text:SetFont("Fonts\\FRIZQT__.TTF",13)
+	tpPanel.Text:SetText(CheckTPSpellCD())
+	tpPanel.Text:SetPoint("BOTTOM", 0, 5)
 	
-	local Tab2=CreateFrame("Button" ,"Tab2", mainFrame, "PanelTabButtonTemplate")
-    PanelTemplates_SetNumTabs(mainFrame,2);
-	Tab2:RegisterEvent("CHAT_MSG_ADDON")
-    Tab2:SetPoint("LEFT", Tab1, "RIGHT", 5, 0)
-    Tab2:SetText("Dung TP");
-    Tab2:SetID(2)
-		Tab2:SetScript(
-		"OnClick", function()
-		C_ChatInfo.SendAddonMessage("KR", "CHECK_TP", "WHISPER", UnitName("player"))
-		PanelTemplates_SetTab(mainFrame, 2)
-			dataFrame:Hide()
-			tpPanel:Show()
+	--updating tp buttons
+	local children = {tpPanel:GetChildren()}
+
+	for i, child in ipairs(children) do
+		if isTpUp then
+			child:Enable()
+			child.icon:SetDesaturated(false)
+		else
+			child:Disable()
+			child.icon:SetDesaturated(true)
 		end
-	)
-     
-
-	--END TABS
+	end
 	
-	PanelTemplates_SetTab(mainFrame, 1)
-
+	--displaying buttons in panel
+	tpPanel:Show()
 end
