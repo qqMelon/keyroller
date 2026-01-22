@@ -806,7 +806,7 @@ frame:SetScript(
 SLASH_KR1 = "/kr"
 SlashCmdList["KR"] = function()
 inInstance, instanceType = IsInInstance()
-	if instanceType == "neighborhood" or not inInstance then 
+	if instanceType == "neighborhood" or instanceType == "interior" or not inInstance then 
 		if KRFrame:IsShown() then
 			KRFrame:Hide()
 			DataFrame:Hide()
