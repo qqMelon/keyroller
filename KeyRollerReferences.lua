@@ -32,4 +32,3 @@ dungBckPath = {
 	[2649] = "Interface\\lfgframe\\lfgicon-prioryofthesacredflames.blp", -- priory
 	[2773] = "Interface\\lfgframe\\lfgicon-waterworks.blp", -- floodgate
 }
-	
