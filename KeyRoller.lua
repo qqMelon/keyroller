@@ -31,13 +31,6 @@ local roleIcons = {
 	DAMAGER = "|TInterface\\AddOns\\keyroller\\Icons\\Role_Damage:13:13|t",
 }
 
--- role Icons
-local roleIcons = {
-	TANK = "|TInterface\\AddOns\\keyroller\\Icons\\Role_Tank:13:13|t",
-	HEALER = "|TInterface\\AddOns\\keyroller\\Icons\\Role_Healer:13:13|t",
-	DAMAGER = "|TInterface\\AddOns\\keyroller\\Icons\\Role_Damage:13:13|t",
-}
-
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
@@ -601,7 +594,6 @@ local function CreateMainFrame()
 			KRFrame:Hide()
             VersFrame:Hide()
 			TPPanel:Hide()
-			PanelTemplates_SetTab(mainFrame, 1)
         end
     )
 	
