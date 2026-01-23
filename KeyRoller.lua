@@ -594,7 +594,6 @@ local function CreateMainFrame()
 			KRFrame:Hide()
             VersFrame:Hide()
 			TPPanel:Hide()
-			PanelTemplates_SetTab(mainFrame, 1)
         end
     )
 	
