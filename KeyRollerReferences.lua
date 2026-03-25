@@ -2,23 +2,24 @@ local addonName, addonTable = ...
 addonTable.constFRLocale = "frFR"
 addonTable.constENLocale = "enUS"
 
--- THX BigWigs team :)
 dungTPSpells = {
-    [542] = 1237215, -- aldani
-    [378] = 354465,  -- hoa
-    [503] = 445417,  -- arakara
-    [391] = 367416,  -- tazavesh
-    [505] = 445414,  -- dawnbreaker
-    [499] = 445444,  -- priory
-    [525] = 1216786, -- floodgate
+	[558] = 1254572, -- magisters' terrace
+	[560] = 1254559, -- maisara caverns
+	[559] = 1254563, -- nexus point xenas
+	[557] = 1254400, -- windrunner spire
+	[402] = 393273, -- algeth'ar academy
+	[556] = 1254555, -- pit of saron
+	[583] = 1254551,-- seat of the triumvirate
+	[161] = 1254557,-- skyreach
 }
 
 dungBckPath = {
-    [542] = "Interface\\lfgframe\\lfgicon-ecodome.blp",                 -- aldani
-    [378] = "Interface\\lfgframe\\lfgicon-hallsofatonement.blp",        -- hoa
-    [503] = "Interface\\lfgframe\\lfgicon-arakaracityofechoes.blp",     -- arakara
-    [391] = "Interface\\lfgframe\\lfgicon-tazaveshtheveiledmarket.blp", -- tazavesh
-    [505] = "Interface\\lfgframe\\lfgicon-thedawnbreaker.blp",          -- dawnbreaker
-    [499] = "Interface\\lfgframe\\lfgicon-prioryofthesacredflames.blp", -- priory
-    [525] = "Interface\\lfgframe\\lfgicon-waterworks.blp",              -- floodgate
+	[558] = "Interface\\lfgframe\\lfgicon-magistersterrace-midnight.blp", -- Terrace
+	[560] = "Interface\\lfgframe\\lfgicon-maisarahills.blp", -- Maisara
+	[559] = "Interface\\lfgframe\\lfgicon-manaforge.blp", -- Nexus point
+	[557] = "Interface\\lfgframe\\lfgicon-windrunnerspire.blp", -- Spire
+	[402] = "Interface\\lfgframe\\lfgicon-theacademy.blp", -- academy
+	[556] = "Interface\\lfgframe\\lfgicon-pitofsaron.blp", -- pit of saron
+	[583] = "Interface\\lfgframe\\lfgicon-seatofthetriumvirate.blp", -- Triumvirate
+	[161] = "Interface\\lfgframe\\lfgicon-skyreach.blp", -- Skyreach
 }
