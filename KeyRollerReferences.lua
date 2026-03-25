@@ -4,31 +4,21 @@ addonTable.constENLocale = "enUS"
 
 -- THX BigWigs team :)
 dungTPSpells = {
-	[2830] = 1237215, -- aldani
-	[2287] = 354465, -- hoa
-	[2660] = 445417, -- arakara
-	[2441] = 367416, -- tazavesh
-	[2662] = 445414, -- dawnbreaker
-	[2649] = 445444, -- priory
-	[2773] = 1216786,-- floodgate
-}
-
-dungTPName = {
-	[2830] = "Aldani",
-	[2287] = "HOA",
-	[2660] = "Ara-kara",
-	[2441] = "Tazavesh",
-	[2662] = "Dawnbreaker",
-	[2649] = "Priory",
-	[2773] = "Floodgate",
+    [542] = 1237215, -- aldani
+    [378] = 354465,  -- hoa
+    [503] = 445417,  -- arakara
+    [391] = 367416,  -- tazavesh
+    [505] = 445414,  -- dawnbreaker
+    [499] = 445444,  -- priory
+    [525] = 1216786, -- floodgate
 }
 
 dungBckPath = {
-	[2830] = "Interface\\lfgframe\\lfgicon-ecodome.blp", -- aldani
-	[2287] = "Interface\\lfgframe\\lfgicon-hallsofatonement.blp", -- hoa
-	[2660] = "Interface\\lfgframe\\lfgicon-arakaracityofechoes.blp", -- arakara
-	[2441] = "Interface\\lfgframe\\lfgicon-tazaveshtheveiledmarket.blp", -- tazavesh
-	[2662] = "Interface\\lfgframe\\lfgicon-thedawnbreaker.blp", -- dawnbreaker
-	[2649] = "Interface\\lfgframe\\lfgicon-prioryofthesacredflames.blp", -- priory
-	[2773] = "Interface\\lfgframe\\lfgicon-waterworks.blp", -- floodgate
+    [542] = "Interface\\lfgframe\\lfgicon-ecodome.blp",                 -- aldani
+    [378] = "Interface\\lfgframe\\lfgicon-hallsofatonement.blp",        -- hoa
+    [503] = "Interface\\lfgframe\\lfgicon-arakaracityofechoes.blp",     -- arakara
+    [391] = "Interface\\lfgframe\\lfgicon-tazaveshtheveiledmarket.blp", -- tazavesh
+    [505] = "Interface\\lfgframe\\lfgicon-thedawnbreaker.blp",          -- dawnbreaker
+    [499] = "Interface\\lfgframe\\lfgicon-prioryofthesacredflames.blp", -- priory
+    [525] = "Interface\\lfgframe\\lfgicon-waterworks.blp",              -- floodgate
 }
