@@ -10,7 +10,7 @@ dungTPSpells = {
 	[402] = 393273, -- algeth'ar academy
 	[556] = 1254555, -- pit of saron
 	[583] = 1254551,-- seat of the triumvirate
-	[161] = 1254557,-- skyreach
+	[161] = 159898,-- skyreach
 }
 
 dungBckPath = {
