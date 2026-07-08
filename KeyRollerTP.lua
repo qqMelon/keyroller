@@ -133,7 +133,7 @@ function CheckAndShowTPPanel(tpPanel)
     local children = { tpPanel:GetChildren() }
 
     for i, child in ipairs(children) do
-        if isTpUp then
+        if isTpUp and IsSpellKnown(child.spellID) then
             child:Enable()
             child.icon:SetDesaturated(false)
         else

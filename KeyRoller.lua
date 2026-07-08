@@ -10,10 +10,6 @@ local rollHistory = {}
 local minKeyLevel = 0
 local maxKeyLevel = 99
 local text = nil
-local versionList = {}
-local versTxt = ""
-local isVersFont = false
-local versFont = nil
 local refreshLock = false
 local refreshLockRoll = false
 local isResizeNeeded = false
@@ -165,6 +161,12 @@ local function FirePromotionEvent(winner)
     return
 end
 
+local function PrintVersion(player, version)
+	local englishClass = UnitClass(player);
+	local color = C_ClassColor.GetClassColor(englishClass):GenerateHexColor()
+	print("|c"..color..player.."|r".." : v."..version)
+end
+
 local function GetPlayerAddonVersion()
     if IsInGroup() then
         C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "ADDON_VERSION", GetGroupType())
@@ -261,70 +263,6 @@ local function DisplayPopUpLeadPromote(winner)
         end
     end
     return
-end
-
-local function CreateVersionFrame()
-    --creation of the version frame
-    local f = CreateFrame("Frame", "VersFrame", UIParent, "BackdropTemplate")
-    f:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 12,
-        insets = { left = 3, right = 1, top = 3, bottom = 3 }
-    })
-    f:SetSize(180, 72)
-    f:SetPoint("BOTTOMRIGHT", "KRFrame", 178, 0)
-    f:SetBackdropColor(0, 0, 0, 0.8)
-    f:SetMovable(false)
-    f:EnableMouse(false)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
-    f:Hide()
-    f:SetScript("OnHide", function()
-        versFont:SetText("")
-        refreshLock = false
-    end
-    )
-
-    tinsert(UISpecialFrames, "VersFrame")
-    return f
-end
-
-local function DisplayVersionFrame()
-    if not isVersFont then
-        versFont = VersFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        versFont:SetPoint("TOPLEFT", 5, -5)
-        versFont:SetJustifyH("LEFT")
-        versFont:SetJustifyV("TOP")
-
-        isVersFont = true
-    end
-
-    local text = ""
-    for p, v in pairs(versionList) do
-        text = text .. "v. " .. v .. "   " .. p .. "\n"
-    end
-    versTxt = text
-
-    versFont:SetText(versTxt)
-    VersFrame:Show()
-end
-
-local function DisplayPopUpRefreshData()
-    StaticPopupDialogs["GATHERING_DATAS"] = {
-        text = "DISPLAYING PLAYERS ADDON-VERSION",
-        OnCancel = function()
-            DisplayVersionFrame()
-        end,
-        sound = levelup2,
-        timeout = 2,
-        whileDead = true,
-        hideOnEscape = true,
-        preferredIndex = 3,
-    }
-
-    StaticPopup_Show("GATHERING_DATAS")
 end
 
 local function DisplayPopUpRefreshDataKey(checkBox, refreshBtn, versBtn, rollButton)
@@ -623,7 +561,6 @@ local function CreateMainFrame()
         "OnClick",
         function()
             KRFrame:Hide()
-            VersFrame:Hide()
             TPPanel:Hide()
         end
     )
@@ -692,19 +629,8 @@ local function CreateMainFrame()
     f.versButton:SetScript(
         "OnClick",
         function()
-            if not refreshLock then
-                refreshLock = true
-                versionList = {}
-                --getting player's version data (storing in versList global variable)
-                GetPlayerAddonVersion()
-                DisplayPopUpRefreshData()
-            end
-
-            if VersFrame then
-                if VersFrame:IsShown() then
-                    VersFrame:Hide()
-                end
-            end
+			--gather group players versions
+			GetPlayerAddonVersion()
         end)
 
     f.refreshBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
@@ -772,7 +698,7 @@ frame:SetScript(
                     end
                 elseif string.find(message, "VERSION_PAYLOAD:") then
                     local _, _, player, version = string.find(message, "VERSION_PAYLOAD:(.+):(%A+)")
-                    versionList[player] = version
+					PrintVersion(player, version)
                 elseif message == "ROLL" and sender ~= UnitName("player") then
                     RandomRoll(1, 100)
                 elseif message == "PROMOTE_LEADER" then
@@ -781,12 +707,8 @@ frame:SetScript(
                     local player = UnitName("player")
                     local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
                     local message = string.format("%s:%s", player, version)
-                    if IsInGroup() then
-                        C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "PARTY")
-                    else
                         C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER",
                             UnitName("player"))
-                    end
                 elseif message == "CLEARING_DATAS" then
                     BroadcastKey(sender)
                 elseif message == "GUILD_DATAS" then
@@ -845,7 +767,6 @@ SlashCmdList["KR"] = function()
         if KRFrame:IsShown() then
             KRFrame:Hide()
             DataFrame:Hide()
-            VersFrame:Hide()
             TPPanel:Hide()
         else
             KRFrame:Show()
@@ -864,7 +785,6 @@ local function initKR()
     -- Initialisation
     dataFrame, mainFrame = CreateMainFrame()
     CreateTPPanel(mainFrame)
-    CreateVersionFrame()
     CreateScrollBar("create")
     print("KeyRoller loaded.")
 end
