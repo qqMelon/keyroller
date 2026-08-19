@@ -3,23 +3,23 @@ addonTable.constFRLocale = "frFR"
 addonTable.constENLocale = "enUS"
 
 dungTPSpells = {
-	[558] = 1254572, -- magisters' terrace
-	[560] = 1254559, -- maisara caverns
-	[559] = 1254563, -- nexus point xenas
-	[557] = 1254400, -- windrunner spire
-	[402] = 393273, -- algeth'ar academy
-	[556] = 1254555, -- pit of saron
-	[583] = 1254551,-- seat of the triumvirate
-	[161] = 159898,-- skyreach
+	[585] = 1286804, -- voidscar arena
+	[584] = 1286801, -- blinding vale
+	[250] = 1286828, -- temple of sethraliss
+	[399] = 393256, -- ruby life pools
+	[587] = 1286809, -- murder row
+	[249] = 1286831, -- king's rest
+	[586] = 1286807,-- den of nalorakk
+	[588] = 1286812,-- altar of fangs
 }
 
 dungBckPath = {
-	[558] = "Interface\\lfgframe\\lfgicon-magistersterrace-midnight.blp", -- Terrace
-	[560] = "Interface\\lfgframe\\lfgicon-maisarahills.blp", -- Maisara
-	[559] = "Interface\\lfgframe\\lfgicon-nexuspointxenas.blp", -- Nexus point
-	[557] = "Interface\\lfgframe\\lfgicon-windrunnerspire.blp", -- Spire
-	[402] = "Interface\\lfgframe\\lfgicon-theacademy.blp", -- academy
-	[556] = "Interface\\lfgframe\\lfgicon-pitofsaron.blp", -- pit of saron
-	[583] = "Interface\\lfgframe\\lfgicon-seatofthetriumvirate.blp", -- Triumvirate
-	[161] = "Interface\\lfgframe\\lfgicon-skyreach.blp", -- Skyreach
+	[585] = "Interface\\lfgframe\\lfgicon-domanaararena.blp", -- voidscar arena
+	[584] = "Interface\\lfgframe\\lfgicon-lightbloom.blp", -- blinding vale
+	[250] = "Interface\\lfgframe\\lfgicon-templeofsethraliss.blp", -- temple of sethraliss
+	[399] = "Interface\\lfgframe\\lfgicon-lifepools.blp", -- ruby life pools
+	[587] = "Interface\\lfgframe\\lfgicon-murderrow.blp", -- murder row
+	[249] = "Interface\\lfgframe\\lfgicon-kingsrest.blp", -- king's rest
+	[586] = "Interface\\lfgframe\\lfgicon-proveyourworth.blp", -- den of nalorakk
+	[588] = "Interface\\lfgframe\\lfgicon-dungeonaltaroffangs.blp", -- altar of fangs
 }
