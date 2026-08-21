@@ -708,7 +708,7 @@ frame:SetScript(
                     local version = C_AddOns.GetAddOnMetadata("keyroller", "Version")
                     local message = string.format("%s:%s", player, version)
                         C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "VERSION_PAYLOAD:" .. message, "WHISPER",
-                            UnitName("player"))
+                            sender)
                 elseif message == "CLEARING_DATAS" then
                     BroadcastKey(sender)
                 elseif message == "GUILD_DATAS" then
