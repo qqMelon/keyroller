@@ -162,7 +162,7 @@ local function FirePromotionEvent(winner)
 end
 
 local function PrintVersion(player, version)
-	local englishClass = UnitClass(player);
+	local _, englishClass, _ = UnitClass(player);
 	local color = C_ClassColor.GetClassColor(englishClass):GenerateHexColor()
 	print("|c"..color..player.."|r".." : v."..version)
 end
